@@ -1,0 +1,129 @@
+---
+# GitHub webhook trigger for the HuntReport pipeline.
+#
+# Setup steps:
+#   1. Apply all resources:
+#        oc -n huntreport apply -f tekton/eventlistener.yaml
+#
+#   2. Get the EventListener route URL:
+#        oc -n huntreport get route huntreport-webhook -o jsonpath='{.spec.host}'
+#
+#   3. Add GitHub webhook:
+#      - Go to https://github.com/shane-snyder/huntreport/settings/hooks
+#      - Payload URL: https://<route-host>/
+#      - Content type: application/json
+#      - Secret: match the value stored in Vault at huntreport/webhook-secret
+#      - Events: Just the push event
+#      - Active: checked
+#
+# The pipeline will trigger on every push to the main branch.
+#
+# The huntreport-webhook-secret should be created via ExternalSecret pulling
+# from Vault. If it does not exist, fall back to creating it directly:
+#   oc -n huntreport create secret generic huntreport-webhook-secret \
+#     --from-literal=secretToken=<random>
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: huntreport-trigger-binding
+  namespace: huntreport
+spec:
+  params:
+    - name: git-revision
+      value: $(body.ref)
+    - name: git-url
+      value: $(body.repository.clone_url)
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: huntreport-trigger-template
+  namespace: huntreport
+spec:
+  params:
+    - name: git-revision
+      default: refs/heads/main
+    - name: git-url
+      default: https://github.com/shane-snyder/huntreport.git
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: huntreport-build-deploy-
+        namespace: huntreport
+      spec:
+        pipelineRef:
+          name: huntreport-build-deploy
+        params:
+          - name: git-url
+            value: $(tt.params.git-url)
+          # Strip "refs/heads/" prefix so we pass just the branch name
+          - name: git-revision
+            value: main
+          - name: image
+            value: quay-server.apps.sno-mini.shanehomelab.com/shane/huntreport:latest
+        workspaces:
+          - name: source
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ReadWriteOnce]
+                resources:
+                  requests:
+                    storage: 1Gi
+          - name: dockerconfig
+            secret:
+              secretName: quay-push-secret
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: huntreport-event-listener
+  namespace: huntreport
+spec:
+  serviceAccountName: pipeline   # default SA created by OpenShift Pipelines operator
+  triggers:
+    - name: huntreport-push-trigger
+      interceptors:
+        # Validate GitHub webhook signature
+        - ref:
+            name: github
+            kind: ClusterInterceptor
+          params:
+            - name: secretRef
+              value:
+                secretName: huntreport-webhook-secret
+                secretKey: secretToken
+            - name: eventTypes
+              value: [push]
+        # Only fire for pushes to main
+        - ref:
+            name: cel
+            kind: ClusterInterceptor
+          params:
+            - name: filter
+              value: "body.ref == 'refs/heads/main'"
+      bindings:
+        - ref: huntreport-trigger-binding
+      template:
+        ref: huntreport-trigger-template
+
+---
+# Expose the EventListener as a Route so GitHub can reach it
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: huntreport-webhook
+  namespace: huntreport
+spec:
+  to:
+    kind: Service
+    name: el-huntreport-event-listener   # auto-created by EventListener controller
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

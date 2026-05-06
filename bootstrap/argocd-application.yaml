@@ -1,0 +1,50 @@
+---
+# Source-of-truth ArgoCD Application for HuntReport.
+#
+# Apply this on the SNO HUB cluster — it lives in argocd-agent-sno-mini and
+# the agent dispatches it down to the sno-mini spoke for sync.
+#
+# Prerequisites on sno-mini (managed elsewhere — already present):
+#   - openshift-pipelines operator
+#   - external-secrets operator + ClusterSecretStore "vault-sno-mini"
+#   - Vault path huntreport/quay-push-secret with property .dockerconfigjson
+#   - Vault path openshift-gitops/repo-huntreport with property "password"
+#     (GitHub PAT used by the polling CronJob)
+#
+# Apply:
+#   oc login -u kubeadmin -p $(cat ~/Documents/SNO/kubeadmin) \
+#     --server=https://api.sno.shanehomelab.com:6443
+#   oc apply -f bootstrap/argocd-application.yaml
+#
+# Then watch it sync:
+#   oc get application -n argocd-agent-sno-mini huntreport -w
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: huntreport
+  namespace: argocd-agent-sno-mini
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app-source: huntreport
+    repo: huntreport
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: argocd-agent-sno-mini-cluster-config
+  destination:
+    name: argocd-agent-sno-mini
+    namespace: huntreport
+  source:
+    path: openshift
+    repoURL: https://github.com/shane-snyder/huntreport.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true

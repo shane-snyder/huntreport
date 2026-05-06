@@ -1,0 +1,110 @@
+---
+# HuntReport Build & Deploy Pipeline
+# Requires: OpenShift Pipelines operator installed on sno-mini
+# Cluster tasks used: git-clone, buildah, openshift-client (in openshift-pipelines ns)
+#
+# Setup:
+#   1. The Quay push secret comes from Vault via ExternalSecret
+#      (openshift/external-secret-quay-push.yaml). Confirm it exists:
+#        oc -n huntreport get secret quay-push-secret
+#
+#   2. Apply this pipeline:
+#        oc -n huntreport apply -f tekton/pipeline.yaml
+#
+#   3. Run manually:
+#        oc -n huntreport create -f tekton/pipelinerun.yaml
+#
+#   4. For auto-trigger on git push, apply:
+#        oc -n huntreport apply -f tekton/eventlistener.yaml
+#      Then add the GitHub webhook (see eventlistener.yaml for the URL).
+
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: huntreport-build-deploy
+  namespace: huntreport
+spec:
+  params:
+    - name: git-url
+      type: string
+      default: https://github.com/shane-snyder/huntreport.git
+    - name: git-revision
+      type: string
+      default: main
+    - name: image
+      type: string
+      default: quay-server.apps.sno-mini.shanehomelab.com/shane/huntreport:latest
+
+  workspaces:
+    - name: source
+    - name: dockerconfig
+      description: Workspace containing Quay registry credentials (.dockerconfigjson)
+
+  tasks:
+
+    # ── Step 1: Clone the repo ───────────────────────────────────────────
+    - name: git-clone
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: URL
+          value: $(params.git-url)
+        - name: REVISION
+          value: $(params.git-revision)
+        - name: DELETE_EXISTING
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: source
+
+    # ── Step 2: Build image with Buildah ────────────────────────────────
+    - name: build-push
+      runAfter: [git-clone]
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: IMAGE
+          value: $(params.image)
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: CONTEXT
+          value: .
+        - name: TLS_VERIFY
+          value: "false"
+      workspaces:
+        - name: source
+          workspace: source
+        - name: dockerconfig
+          workspace: dockerconfig
+
+    # ── Step 3: Roll out the new image ──────────────────────────────────
+    - name: deploy
+      runAfter: [build-push]
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: openshift-client
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: SCRIPT
+          value: |
+            oc -n huntreport rollout restart deployment/huntreport
+            oc -n huntreport rollout status deployment/huntreport --timeout=120s

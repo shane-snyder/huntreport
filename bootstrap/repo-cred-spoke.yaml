@@ -1,0 +1,47 @@
+---
+# ArgoCD repository credential for huntreport on the SNO-MINI SPOKE.
+#
+# The argocd agent on the spoke clones the repo locally to render and apply
+# manifests. It reads repo creds from the `argocd-agent` namespace (matching
+# the existing repo-ocp-apps pattern).
+#
+# Apply:
+#   oc login -u kubeadmin -p $(cat ~/Documents/SNO-MINI/kubeadmin) \
+#     --server=https://api.sno-mini.shanehomelab.com:6443
+#   oc apply -f bootstrap/repo-cred-spoke.yaml
+
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: repo-huntreport
+  namespace: argocd-agent
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-sno-mini
+  target:
+    name: repo-huntreport
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    template:
+      metadata:
+        labels:
+          argocd.argoproj.io/secret-type: repository
+  data:
+    - secretKey: type
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: type
+    - secretKey: url
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: url
+    - secretKey: username
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: username
+    - secretKey: password
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: password

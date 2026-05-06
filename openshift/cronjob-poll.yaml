@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pipeline-poller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pipeline-poller
+rules:
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelineruns"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["delete"]
+  - apiGroups: ["route.openshift.io"]
+    resources: ["routes"]
+    verbs: ["delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pipeline-poller
+subjects:
+  - kind: ServiceAccount
+    name: pipeline-poller
+roleRef:
+  kind: Role
+  name: pipeline-poller
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: huntreport-poll
+  labels:
+    app: huntreport-poll
+spec:
+  schedule: "*/2 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          serviceAccountName: pipeline-poller
+          restartPolicy: Never
+          containers:
+            - name: poller
+              image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+              env:
+                - name: GITHUB_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: github-token
+                      key: token
+                - name: GITHUB_REPO
+                  value: shane-snyder/huntreport
+                - name: CONFIGMAP_NAME
+                  value: huntreport-poll-status
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+
+                  BRANCHES_JSON=$(curl -sf -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/branches?per_page=100")
+
+                  if [ -z "${BRANCHES_JSON}" ]; then
+                    echo "ERROR: Failed to fetch branches from GitHub"
+                    exit 1
+                  fi
+
+                  CURRENT=$(echo "${BRANCHES_JSON}" | python3 -c "
+                  import json, sys
+                  for b in json.load(sys.stdin):
+                      print(b['name'] + '=' + b['commit']['sha'])
+                  ")
+
+                  STORED=""
+                  if oc get configmap "${CONFIGMAP_NAME}" &>/dev/null; then
+                    STORED=$(oc get configmap "${CONFIGMAP_NAME}" -o jsonpath='{.data.branches}')
+                  else
+                    oc create configmap "${CONFIGMAP_NAME}" --from-literal=branches=""
+                  fi
+
+                  CURRENT_BRANCH_NAMES=$(echo "${CURRENT}" | cut -d= -f1 | sort)
+
+                  if [ -n "${STORED}" ]; then
+                    STORED_BRANCH_NAMES=$(echo "${STORED}" | tr ',' '\n' | cut -d= -f1 | sort)
+                    DELETED=$(comm -23 <(echo "${STORED_BRANCH_NAMES}") <(echo "${CURRENT_BRANCH_NAMES}"))
+                    for BRANCH in ${DELETED}; do
+                      if [ "${BRANCH}" = "main" ]; then
+                        continue
+                      fi
+                      SAFE=$(echo "${BRANCH}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
+                      APP="huntreport-${SAFE}"
+                      echo "Branch '${BRANCH}' deleted — cleaning up ${APP}"
+                      oc delete deployment "${APP}" --ignore-not-found
+                      oc delete service "${APP}" --ignore-not-found
+                      oc delete route "${APP}" --ignore-not-found
+                    done
+                  fi
+
+                  UPDATED_LIST=""
+                  for ENTRY in ${CURRENT}; do
+                    BRANCH=$(echo "${ENTRY}" | cut -d= -f1)
+                    SHA=$(echo "${ENTRY}" | cut -d= -f2)
+                    OLD_SHA=""
+                    if [ -n "${STORED}" ]; then
+                      OLD_SHA=$(echo "${STORED}" | tr ',' '\n' | grep "^${BRANCH}=" | cut -d= -f2 || true)
+                    fi
+
+                    if [ "${SHA}" != "${OLD_SHA}" ]; then
+                      if [ "${BRANCH}" = "main" ]; then
+                        echo "New commit on main (${SHA}) — triggering prod pipeline"
+                        cat <<EOF | oc create -f -
+                  apiVersion: tekton.dev/v1
+                  kind: PipelineRun
+                  metadata:
+                    generateName: huntreport-prod-
+                  spec:
+                    pipelineRef:
+                      name: huntreport-prod
+                    workspaces:
+                      - name: source
+                        volumeClaimTemplate:
+                          spec:
+                            accessModes: ["ReadWriteOnce"]
+                            resources:
+                              requests:
+                                storage: 1Gi
+                      - name: dockerconfig
+                        secret:
+                          secretName: quay-push-secret
+                      - name: basic-auth
+                        secret:
+                          secretName: git-basic-auth
+                  EOF
+                      else
+                        SAFE_BRANCH=$(echo "${BRANCH}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
+                        echo "New commit on '${BRANCH}' (${SHA}) — triggering dev pipeline"
+                        cat <<EOF | oc create -f -
+                  apiVersion: tekton.dev/v1
+                  kind: PipelineRun
+                  metadata:
+                    generateName: huntreport-dev-${SAFE_BRANCH}-
+                  spec:
+                    pipelineRef:
+                      name: huntreport-dev
+                    params:
+                      - name: git-revision
+                        value: "${BRANCH}"
+                    workspaces:
+                      - name: source
+                        volumeClaimTemplate:
+                          spec:
+                            accessModes: ["ReadWriteOnce"]
+                            resources:
+                              requests:
+                                storage: 1Gi
+                      - name: dockerconfig
+                        secret:
+                          secretName: quay-push-secret
+                      - name: basic-auth
+                        secret:
+                          secretName: git-basic-auth
+                  EOF
+                      fi
+                    fi
+
+                    if [ -n "${UPDATED_LIST}" ]; then
+                      UPDATED_LIST="${UPDATED_LIST},${ENTRY}"
+                    else
+                      UPDATED_LIST="${ENTRY}"
+                    fi
+                  done
+
+                  oc patch configmap "${CONFIGMAP_NAME}" --type merge \
+                    -p "{\"data\":{\"branches\":\"${UPDATED_LIST}\"}}"
+                  echo "Poll complete — tracked $(echo "${CURRENT}" | wc -l | tr -d ' ') branches"

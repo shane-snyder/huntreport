@@ -1,0 +1,123 @@
+---
+# ArgoCD repository credential for huntreport on the SNO HUB.
+#
+# Hub argocd needs the cred in three namespaces (matching how repo-castreport
+# is laid out): the operator's main `argocd` namespace, the source-of-truth
+# `argocd-agent` namespace, and the per-spoke mirror `argocd-agent-sno-mini`.
+#
+# Each ExternalSecret pulls from the same Vault path on the `sno/` scope and
+# materializes a Secret with label argocd.argoproj.io/secret-type=repository,
+# which ArgoCD discovers via label selector.
+#
+# Apply:
+#   oc login -u kubeadmin -p $(cat ~/Documents/SNO/kubeadmin) \
+#     --server=https://api.sno.shanehomelab.com:6443
+#   oc apply -f bootstrap/repo-cred-hub.yaml
+
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: repo-huntreport
+  namespace: argocd
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-sno
+  target:
+    name: repo-huntreport
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    template:
+      metadata:
+        labels:
+          argocd.argoproj.io/secret-type: repository
+  data:
+    - secretKey: type
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: type
+    - secretKey: url
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: url
+    - secretKey: username
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: username
+    - secretKey: password
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: password
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: repo-huntreport
+  namespace: argocd-agent
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-sno
+  target:
+    name: repo-huntreport
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    template:
+      metadata:
+        labels:
+          argocd.argoproj.io/secret-type: repository
+  data:
+    - secretKey: type
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: type
+    - secretKey: url
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: url
+    - secretKey: username
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: username
+    - secretKey: password
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: password
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: repo-huntreport
+  namespace: argocd-agent-sno-mini
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-sno
+  target:
+    name: repo-huntreport
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    template:
+      metadata:
+        labels:
+          argocd.argoproj.io/secret-type: repository
+  data:
+    - secretKey: type
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: type
+    - secretKey: url
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: url
+    - secretKey: username
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: username
+    - secretKey: password
+      remoteRef:
+        key: argocd-agent/repo-huntreport
+        property: password

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HuntReport — Hunting Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0e08;--surface:#15180f;--surface2:#1c2014;--surface3:#252a18;
+  --border:rgba(176,141,87,.20);--border2:rgba(176,141,87,.32);
+  --accent:#b08d57;--gold:#e6b450;--rust:#c66a3a;--olive:#6f7a3a;--blood:#8a2b2b;
+  --text:#ece5d4;--text-secondary:rgba(236,229,212,.66);--text-muted:rgba(236,229,212,.40);
+  --good:#8aa53a;--fair:#e6b450;--poor:#c66a3a;--great:#b08d57;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
+
+/* ── Top bar ── */
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(12,14,8,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:5px;color:var(--accent)}
+.logo span{color:var(--gold)}
+.tag-pill{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:2px;color:var(--text-muted);border:1px solid var(--border);padding:4px 10px;border-radius:999px}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:80px 20px 60px;background:linear-gradient(140deg,#0c0e08 0%,#15180f 40%,#252a18 80%,#3a3a1f 100%);position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 16% 18%,rgba(230,180,80,.18) 0%,transparent 55%),radial-gradient(ellipse at 84% 60%,rgba(111,122,58,.18) 0%,transparent 60%);pointer-events:none}
+.hero > *{position:relative;z-index:1}
+.headline{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,8vw,6.2rem);letter-spacing:8px;line-height:.95;color:#fff;text-shadow:0 16px 32px rgba(0,0,0,.5)}
+.headline span{color:var(--gold)}
+.tagline{font-family:'Crimson Pro',serif;font-style:italic;color:rgba(255,255,255,.7);margin:14px 0 30px;font-size:1.1rem;letter-spacing:.5px}
+.search-wrap{display:flex;gap:10px;max-width:680px;margin:0 auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:10px;backdrop-filter:blur(8px)}
+.s-input{flex:1;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:14px 18px;color:#fff;font-family:'Inter',system-ui,sans-serif;font-size:1.05rem;outline:none;transition:border .2s,box-shadow .2s}
+.s-input:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(230,180,80,.18)}
+.s-input::placeholder{color:rgba(255,255,255,.45)}
+.s-btn{background:var(--gold);border:none;border-radius:999px;padding:14px 26px;color:#1c1707;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;cursor:pointer;transition:opacity .2s;white-space:nowrap;box-shadow:0 12px 26px rgba(230,180,80,.22)}
+.s-btn:hover{opacity:.85}
+.gps-btn{background:none;border:1px solid rgba(255,255,255,.22);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:2px;padding:10px 18px;border-radius:999px;cursor:pointer;margin-top:14px;transition:all .2s}
+.gps-btn:hover{border-color:var(--gold);background:rgba(230,180,80,.10)}
+
+/* ── Day picker ── */
+.day-picker{display:none;gap:8px;flex-wrap:wrap;margin-top:24px;justify-content:center;max-width:760px;margin-left:auto;margin-right:auto}
+.dp{display:flex;flex-direction:column;align-items:center;gap:4px;padding:11px 15px;border-radius:14px;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);font-family:'JetBrains Mono',monospace;transition:all .2s;min-width:90px;color:#fff}
+.dp:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)}
+.dp.active{background:rgba(230,180,80,.18);border-color:var(--gold);box-shadow:0 0 0 3px rgba(230,180,80,.12)}
+.dp-day{font-size:.7rem;letter-spacing:2px;color:rgba(255,255,255,.55);font-weight:700}
+.dp.active .dp-day{color:var(--gold)}
+.dp-date{font-size:.7rem;color:rgba(255,255,255,.45)}
+.dp-icon{font-size:1.4rem;margin:4px 0}
+.dp-hilo{font-size:.75rem;color:rgba(255,255,255,.85)}
+
+.err{display:none;margin:14px auto 0;max-width:640px;padding:13px 18px;background:rgba(198,106,58,.14);border:1px solid rgba(198,106,58,.32);border-radius:8px;color:#e6936a;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:1px}
+
+/* ── Loader ── */
+.loader{display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:18px}
+.deer-anim{font-size:2.6rem;animation:track .9s ease-in-out infinite alternate}
+@keyframes track{0%{transform:translateX(-8px)}100%{transform:translateX(8px)}}
+.load-txt{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:3px;color:var(--text-muted);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ── Report ── */
+#rpt{display:none;max-width:1100px;margin:0 auto;padding:32px 20px 60px}
+.r-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.r-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,3.5vw,3rem);letter-spacing:4px;color:var(--text)}
+.r-meta{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:2px;color:var(--text-muted);margin-top:4px}
+.r-ts{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;color:var(--text-muted);text-align:right}
+
+.fc-banner{background:rgba(230,180,80,.08);border:1px solid rgba(230,180,80,.28);border-radius:8px;padding:9px 18px;margin-bottom:20px;font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:2px;color:rgba(230,180,80,.85);text-align:center;display:none}
+.fc-banner.show{display:block}
+
+/* ── Verdict ── */
+.verdict{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 30px;margin-bottom:28px;box-shadow:0 16px 36px rgba(0,0,0,.32)}
+.v-left{display:flex;align-items:center;gap:18px}
+.v-icon{font-size:2.4rem}
+.v-label{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:4px;color:var(--gold)}
+.v-desc{font-family:'Crimson Pro',serif;font-style:italic;color:var(--text-secondary);margin-top:6px;font-size:1rem;max-width:560px;line-height:1.5}
+.v-score{text-align:right}
+.v-num{font-family:'Bebas Neue',sans-serif;font-size:3.6rem;line-height:1;color:var(--gold)}
+.v-lbl{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--text-muted)}
+
+/* ── Section header ── */
+.sec{font-family:'Bebas Neue',sans-serif;letter-spacing:5px;color:var(--accent);font-size:1.25rem;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);text-transform:uppercase}
+
+/* ── Card grid ── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:30px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--olive),var(--gold));opacity:.85}
+.c-lbl{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--text-muted);margin-bottom:8px}
+.c-val{font-family:'Bebas Neue',sans-serif;font-size:1.95rem;letter-spacing:1px;line-height:1;color:var(--text)}
+.c-unit{font-size:.9rem;color:var(--text-secondary);margin-left:2px}
+.c-sub{font-size:.78rem;color:var(--text-secondary);margin-top:5px;font-style:italic}
+
+/* ── Wind/moon box ── */
+.detail-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 24px;margin-bottom:28px}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px}
+.dc{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px}
+.dc-lbl{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px}
+.dc-val{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;line-height:1;color:var(--text)}
+.dc-unit{font-size:.85rem;color:var(--text-secondary)}
+.dc-sub{font-size:.78rem;color:var(--text-secondary);margin-top:8px;font-style:italic}
+
+.compass{display:flex;align-items:center;gap:14px}
+.compass-rose{width:64px;height:64px;border:2px solid var(--border2);border-radius:50%;position:relative;flex-shrink:0;background:radial-gradient(circle,var(--surface3) 0%,var(--surface2) 100%)}
+.compass-rose::before,.compass-rose::after{content:'';position:absolute;background:rgba(176,141,87,.25)}
+.compass-rose::before{top:0;bottom:0;left:50%;width:1px;transform:translateX(-50%)}
+.compass-rose::after{left:0;right:0;top:50%;height:1px;transform:translateY(-50%)}
+.compass-arrow{position:absolute;top:50%;left:50%;width:3px;height:24px;background:var(--gold);transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(0deg);border-radius:2px;box-shadow:0 0 6px rgba(230,180,80,.5)}
+.compass-n{position:absolute;top:-2px;left:50%;transform:translate(-50%,-100%);font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text-muted);letter-spacing:1px}
+
+/* ── Game cards ── */
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:30px}
+.game-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;transition:transform .2s;position:relative;overflow:hidden}
+.game-card:hover{transform:translateY(-2px)}
+.game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);opacity:.7}
+.game-card.rut::before{background:var(--blood);opacity:1}
+.gc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
+.gc-name{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;color:var(--text)}
+.gc-cat{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1.5px;color:var(--text-muted);margin-top:2px;text-transform:uppercase}
+.gc-badge{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1.5px;padding:3px 8px;border-radius:4px;font-weight:700;flex-shrink:0}
+.gc-badge.HOT{background:rgba(198,106,58,.22);color:#e6936a;border:1px solid rgba(198,106,58,.34)}
+.gc-badge.ACTIVE{background:rgba(138,165,58,.18);color:#b8d250;border:1px solid rgba(138,165,58,.28)}
+.gc-badge.FAIR{background:rgba(230,180,80,.14);color:#e6b450;border:1px solid rgba(230,180,80,.22)}
+.gc-badge.SLOW{background:rgba(255,255,255,.04);color:var(--text-muted);border:1px solid var(--border)}
+.gc-tip{font-family:'Crimson Pro',serif;font-size:.95rem;color:var(--text-secondary);font-style:italic;line-height:1.5;margin-top:6px}
+.rut-flag{display:inline-block;background:rgba(138,43,43,.22);color:#d97070;border:1px solid rgba(138,43,43,.4);font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1.5px;padding:3px 7px;border-radius:4px;margin-top:8px}
+
+/* ── Hourly chart ── */
+.hourly-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 24px;margin-bottom:18px}
+.hourly-grid{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;align-items:end;height:140px;margin-top:14px;position:relative}
+.hh{position:relative;display:flex;align-items:flex-end;justify-content:center;border-radius:3px 3px 0 0;cursor:pointer;transition:filter .15s;min-height:6px;background:var(--surface3)}
+.hh:hover{filter:brightness(1.4)}
+.hh.now{outline:2px solid var(--rust);outline-offset:1px;z-index:2}
+.hh-bar{width:100%;border-radius:3px 3px 0 0}
+.hh-bar.s5{background:linear-gradient(180deg,#f0d878 0%,#e6b450 100%)} /* prime 80+ */
+.hh-bar.s4{background:linear-gradient(180deg,#b8d250 0%,#8aa53a 100%)} /* good 65-79 */
+.hh-bar.s3{background:linear-gradient(180deg,#b08d57 0%,#8a6f3a 100%)} /* fair 45-64 */
+.hh-bar.s2{background:linear-gradient(180deg,#7a6230 0%,#4a3a1a 100%)} /* slow 30-44 */
+.hh-bar.s1{background:linear-gradient(180deg,#3a3525 0%,#252010 100%)} /* poor <30 */
+.hh-axis{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.5px;color:var(--text-muted);margin-top:6px;text-align:center}
+.hh-axis div{padding-top:2px}
+.hh-axis div.major{color:var(--text-secondary);font-weight:700}
+.solar-line{position:absolute;top:-6px;bottom:-2px;width:1px;background:rgba(230,180,80,.55);z-index:1;pointer-events:none}
+.solar-line.sunset{background:rgba(198,106,58,.55)}
+.solar-line::after{content:attr(data-label);position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.5px;color:var(--text-muted);white-space:nowrap}
+.hh-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.5px;color:var(--text);white-space:nowrap;display:none;z-index:5;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+.hh:hover .hh-tip{display:block}
+.hourly-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1px;color:var(--text-muted)}
+.hl-item{display:flex;align-items:center;gap:5px}
+.hl-dot{width:10px;height:10px;border-radius:2px}
+
+/* Best windows pulled out of the curve */
+.windows-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:30px}
+.w-cell{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
+.w-cell.primary{border-color:var(--gold);background:rgba(230,180,80,.08)}
+.w-range{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:3px;color:var(--text)}
+.w-cell.primary .w-range{color:var(--gold)}
+.w-peak{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--text-muted);margin-top:4px}
+.w-why{font-family:'Crimson Pro',serif;font-style:italic;font-size:.85rem;color:var(--text-secondary);margin-top:6px}
+
+/* ── Spots ── */
+.spots-section{margin-bottom:30px}
+.tab-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:2px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);cursor:pointer;transition:all .2s}
+.tab:hover{border-color:var(--accent);color:var(--accent)}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#1c1707}
+.spot-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.spot-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;position:relative;overflow:hidden}
+.spot-card.featured{border-color:var(--gold);box-shadow:0 0 0 1px rgba(230,180,80,.18)}
+.spot-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);opacity:.6}
+.spot-card.featured::before{background:linear-gradient(90deg,var(--gold),var(--rust));opacity:1}
+.sp-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.sp-name{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;color:var(--text)}
+.sp-dist{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--text-muted);margin-top:4px}
+.sp-rating{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1.5px;padding:3px 8px;border-radius:4px;font-weight:700;flex-shrink:0}
+.sp-rating.HOT{background:rgba(198,106,58,.22);color:#e6936a;border:1px solid rgba(198,106,58,.34)}
+.sp-rating.GOOD{background:rgba(138,165,58,.18);color:#b8d250;border:1px solid rgba(138,165,58,.28)}
+.sp-rating.FAIR{background:rgba(230,180,80,.14);color:#e6b450;border:1px solid rgba(230,180,80,.22)}
+.sp-desc{font-family:'Crimson Pro',serif;font-size:.95rem;color:var(--text-secondary);line-height:1.5;margin:8px 0}
+.sp-game{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.sp-game-pill{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1px;padding:2px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary)}
+.sp-tip{font-family:'Crimson Pro',serif;font-size:.88rem;color:var(--text);font-style:italic;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+.sp-meta{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1px;color:var(--text-muted);margin-top:8px;display:flex;flex-wrap:wrap;gap:10px}
+.sp-meta-item::before{content:'·';margin-right:6px}
+.sp-meta-item:first-child::before{content:''}
+.spots-intro{font-family:'Crimson Pro',serif;font-size:1rem;color:var(--text-secondary);font-style:italic;margin-bottom:18px;line-height:1.6}
+
+/* ── Insight box ── */
+.insight-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 24px;margin-bottom:28px}
+.insight-text{font-family:'Crimson Pro',serif;font-size:1.05rem;color:var(--text-secondary);line-height:1.6;font-style:italic}
+
+/* ── Footer ── */
+footer{padding:30px 20px;text-align:center;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:2px;color:var(--text-muted)}
+
+@media (max-width:600px){
+  .verdict{flex-direction:column;gap:18px;text-align:center}
+  .v-left{flex-direction:column}
+  .v-score{text-align:center}
+  .top-bar{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo">HUNT<span>REPORT</span></div>
+  <div class="tag-pill">FIELD INTELLIGENCE</div>
+</div>
+
+<section class="hero">
+  <h1 class="headline">HUNT<span>REPORT</span></h1>
+  <p class="tagline">Weather, wind, moon, and game movement — for any spot in North America.</p>
+  <div class="search-wrap">
+    <input id="locInput" class="s-input" type="text" placeholder="City, state, WMA, or national forest…" autocomplete="off">
+    <button id="searchBtn" class="s-btn">SCOUT IT</button>
+  </div>
+  <button id="gpsBtn" class="gps-btn">USE MY LOCATION</button>
+  <div id="dayPicker" class="day-picker"></div>
+  <div id="errBox" class="err"></div>
+</section>
+
+<div id="loader" class="loader">
+  <div class="deer-anim">🦌</div>
+  <div class="load-txt" id="loadTxt">SCOUTING THE GROUND…</div>
+</div>
+
+<main id="rpt">
+  <div class="r-head">
+    <div>
+      <div class="r-name" id="rName"></div>
+      <div class="r-meta" id="rMeta"></div>
+    </div>
+    <div class="r-ts" id="rTs"></div>
+  </div>
+
+  <div id="fcBanner" class="fc-banner"></div>
+
+  <div class="verdict" id="verdict"></div>
+
+  <div class="insight-box"><div class="insight-text" id="insightText"></div></div>
+
+  <h2 class="sec">FIELD CONDITIONS</h2>
+  <div class="card-grid" id="wxGrid"></div>
+
+  <h2 class="sec">WIND &amp; MOON</h2>
+  <div class="detail-box">
+    <div class="detail-grid" id="windMoonGrid"></div>
+  </div>
+
+  <h2 class="sec">GAME ACTIVITY</h2>
+  <div class="game-grid" id="gameGrid"></div>
+
+  <h2 class="sec">HOURLY HUNT FORECAST</h2>
+  <div class="hourly-box">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;color:var(--text-muted)" id="hourlySubtitle">SCORE BY HOUR · HOVER FOR DETAIL</div>
+    <div class="hourly-grid" id="hourlyGrid"></div>
+    <div class="hh-axis" id="hourlyAxis"></div>
+    <div class="hourly-legend">
+      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#f0d878,#e6b450)"></span>PRIME 80+</span>
+      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#b8d250,#8aa53a)"></span>GOOD 65–79</span>
+      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#b08d57,#8a6f3a)"></span>FAIR 45–64</span>
+      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#7a6230,#4a3a1a)"></span>SLOW 30–44</span>
+      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#3a3525,#252010)"></span>POOR &lt;30</span>
+      <span class="hl-item"><span class="hl-dot" style="background:rgba(230,180,80,.55);width:2px"></span>SUNRISE</span>
+      <span class="hl-item"><span class="hl-dot" style="background:rgba(198,106,58,.55);width:2px"></span>SUNSET</span>
+    </div>
+  </div>
+  <div class="windows-row" id="windowsRow"></div>
+
+  <div class="spots-section">
+    <h2 class="sec" id="spotsSec">PUBLIC HUNTING LANDS</h2>
+    <div class="spots-intro" id="spotsIntro"></div>
+    <div class="tab-row" id="spotTabs"></div>
+    <div class="spot-cards" id="spotCards"></div>
+  </div>
+</main>
+
+<footer>
+  HUNTREPORT · DATA: OPEN-METEO, NOMINATIM, OPENSTREETMAP, USGS · ALWAYS VERIFY SEASONS &amp; REGULATIONS
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+let _lastLat=null,_lastLon=null,_lastName='',_lastDayIdx=0,_lastWeather=null;
+
+function showLoader(on,msg){
+  $('loader').style.display = on ? 'flex' : 'none';
+  $('rpt').style.display    = on ? 'none' : ($('rpt').dataset.hasReport==='1' ? 'block' : 'none');
+  if (msg) $('loadTxt').textContent = msg;
+}
+function showErr(m){ const e=$('errBox'); e.textContent=m; e.style.display='block'; }
+function hideErr(){ $('errBox').style.display='none'; }
+
+async function geocode(q){
+  const res = await fetch('/api/geocode?q=' + encodeURIComponent(q));
+  if(!res.ok) throw new Error('geocode http '+res.status);
+  return res.json();
+}
+
+async function fetchReport(lat,lon,name,dayIdx){
+  const u = `/api/report?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name||'')}&day_index=${dayIdx||0}`;
+  const res = await fetch(u);
+  if(!res.ok) throw new Error('report http '+res.status);
+  return res.json();
+}
+
+function fmt(n,d=0){ if(n===null||n===undefined||Number.isNaN(n)) return '—'; return Number(n).toFixed(d); }
+
+const WX_ICON = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',77:'❄️',80:'🌧️',81:'🌧️',82:'⛈️',85:'🌨️',86:'🌨️',95:'⛈️',96:'⛈️',99:'⛈️'};
+
+function buildDayPicker(daily){
+  const el = $('dayPicker');
+  el.innerHTML = '';
+  el.style.display = 'flex';
+  const times = daily.time || [];
+  const today = new Date();
+  for (let i=0;i<Math.min(7,times.length);i++){
+    const d = new Date(times[i] + 'T00:00');
+    const lbl = i===0 ? 'TODAY' : d.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
+    const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}).toUpperCase();
+    const wc = (daily.weather_code||[])[i];
+    const ic = WX_ICON[wc] || '🌤️';
+    const hi = Math.round((daily.temperature_2m_max||[])[i] ?? NaN);
+    const lo = Math.round((daily.temperature_2m_min||[])[i] ?? NaN);
+    const cell = document.createElement('div');
+    cell.className = 'dp' + (i===_lastDayIdx?' active':'');
+    cell.innerHTML = `<div class="dp-day">${lbl}</div><div class="dp-date">${ds}</div><div class="dp-icon">${ic}</div><div class="dp-hilo">${hi}° / ${lo}°</div>`;
+    cell.onclick = () => selectDay(i);
+    el.appendChild(cell);
+  }
+}
+
+async function selectDay(idx){
+  _lastDayIdx = idx;
+  document.querySelectorAll('.dp').forEach((el,i)=>el.classList.toggle('active', i===idx));
+  if(_lastLat!=null) await renderReport(_lastLat,_lastLon,_lastName,idx);
+}
+
+function renderVerdict(ai){
+  const score = ai.score || 0;
+  const icon = score>=80?'🏔️':score>=65?'🦌':score>=45?'🌤️':'⛈️';
+  $('verdict').innerHTML = `
+    <div class="v-left">
+      <div class="v-icon">${icon}</div>
+      <div>
+        <div class="v-label">${ai.verdict}</div>
+        <div class="v-desc">${ai.insight || ''}</div>
+      </div>
+    </div>
+    <div class="v-score">
+      <div class="v-num">${score}</div>
+      <div class="v-lbl">HUNT INDEX / 100</div>
+    </div>`;
+  $('insightText').textContent = ai.insight || '';
+}
+
+function renderConditions(weather, analysis){
+  const cur = weather.current || {};
+  const daily = weather.daily || {};
+  const idx = _lastDayIdx;
+  const tHi = (daily.temperature_2m_max||[])[idx];
+  const tLo = (daily.temperature_2m_min||[])[idx];
+  const isToday = idx===0;
+  const temp = isToday ? cur.temperature_2m : ((tHi+tLo)/2);
+  const wind = isToday ? cur.wind_speed_10m : (daily.wind_speed_10m_max||[])[idx];
+  const press = cur.pressure_msl;
+  const hum = cur.relative_humidity_2m;
+  const cloud = cur.cloud_cover;
+  const precip = (daily.precipitation_sum||[])[idx];
+  const elev = analysis.elevationFt;
+  const zone = analysis.zone;
+
+  const cards = [
+    {lbl:'TEMPERATURE', val:fmt(temp,0), unit:'°F', sub:isToday?`feels ${fmt(cur.apparent_temperature,0)}°`:`hi ${fmt(tHi,0)}° · lo ${fmt(tLo,0)}°`},
+    {lbl:'WIND', val:fmt(wind,0), unit:' mph', sub: cur.wind_gusts_10m && isToday ? `gusts ${fmt(cur.wind_gusts_10m,0)} mph` : ''},
+    {lbl:'PRESSURE', val:press?fmt(press,0):'—', unit:press?' hPa':'', sub:press?(press>=1020?'high & stable':press<1005?'falling':'normal'):''},
+    {lbl:'HUMIDITY', val:hum!=null?fmt(hum,0):'—', unit:hum!=null?'%':'', sub:''},
+    {lbl:'CLOUDS', val:cloud!=null?fmt(cloud,0):'—', unit:cloud!=null?'%':'', sub: cloud!=null && cloud>70?'overcast':cloud<30?'clear':'partly cloudy'},
+    {lbl:'PRECIP', val:precip!=null?fmt(precip,2):'—', unit:precip!=null?'"':'', sub: (daily.precipitation_probability_max||[])[idx]!=null?`${(daily.precipitation_probability_max||[])[idx]}% chance`:''},
+    {lbl:'ELEVATION', val: elev?fmt(elev,0):'—', unit: elev?' ft':'', sub: zone||''},
+  ];
+  $('wxGrid').innerHTML = cards.map(c=>`
+    <div class="card">
+      <div class="c-lbl">${c.lbl}</div>
+      <div class="c-val">${c.val}<span class="c-unit">${c.unit}</span></div>
+      ${c.sub?`<div class="c-sub">${c.sub}</div>`:''}
+    </div>`).join('');
+}
+
+function renderWindMoon(ai){
+  const w = ai.wind || {};
+  const m = ai.moon || {};
+  const dir = w.directionDeg ?? null;
+  const arrow = dir!=null ? `transform: translate(-50%,-100%) rotate(${dir}deg)` : '';
+  const html = `
+    <div class="dc">
+      <div class="dc-lbl">WIND</div>
+      <div class="compass">
+        <div class="compass-rose">
+          <div class="compass-n">N</div>
+          <div class="compass-arrow" style="${arrow}"></div>
+        </div>
+        <div>
+          <div class="dc-val">${w.speedMph!=null?w.speedMph:'—'}<span class="dc-unit"> mph ${w.compass||''}</span></div>
+          <div class="dc-sub" style="margin-top:4px"><strong style="color:var(--accent)">${w.rating||'—'}</strong></div>
+        </div>
+      </div>
+      <div class="dc-sub">${w.note||''}</div>
+    </div>
+    <div class="dc">
+      <div class="dc-lbl">MOON</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:2.6rem">${m.icon||'🌑'}</div>
+        <div>
+          <div class="dc-val">${m.label||'—'}</div>
+          <div class="dc-sub" style="margin-top:4px">${m.illumination!=null?Math.round(m.illumination*100)+'% illuminated':''} · <strong style="color:var(--accent)">${m.rating||''}</strong></div>
+        </div>
+      </div>
+      <div class="dc-sub">${m.note||''}</div>
+    </div>`;
+  $('windMoonGrid').innerHTML = html;
+}
+
+function catLabel(c){
+  return ({big_game:'BIG GAME', upland:'UPLAND', waterfowl:'WATERFOWL', small_game:'SMALL GAME', predator:'PREDATOR', varmint:'VARMINT'})[c] || (c||'').replace('_',' ').toUpperCase();
+}
+
+function renderGame(game){
+  $('gameGrid').innerHTML = (game||[]).map(g => `
+    <div class="game-card${g.rut?' rut':''}">
+      <div class="gc-head">
+        <div>
+          <div class="gc-name">${g.name}</div>
+          <div class="gc-cat">${catLabel(g.category)}</div>
+        </div>
+        <div class="gc-badge ${g.activity}">${g.activity}</div>
+      </div>
+      ${g.rut?'<div class="rut-flag">RUT ACTIVITY</div>':''}
+      <div class="gc-tip">${g.tip}</div>
+    </div>`).join('');
+}
+
+function scoreClass(s){
+  if(s>=80) return 's5';
+  if(s>=65) return 's4';
+  if(s>=45) return 's3';
+  if(s>=30) return 's2';
+  return 's1';
+}
+
+function renderHourlyChart(hourly, sunriseHour, sunsetHour, isToday){
+  const grid = $('hourlyGrid');
+  const axis = $('hourlyAxis');
+  if(!hourly || !hourly.length){ grid.innerHTML=''; axis.innerHTML=''; return; }
+  const nowHour = new Date().getHours();
+  grid.innerHTML = hourly.map(h => {
+    const heightPct = Math.max(6, h.score);
+    const hourLabel = h.hour===0?'12 AM':h.hour<12?(h.hour+' AM'):h.hour===12?'12 PM':((h.hour-12)+' PM');
+    const tip = `${hourLabel} · ${h.score}/100${h.factors&&h.factors.length?' · '+h.factors.slice(0,2).join(', '):''}${h.tempF!=null?' · '+Math.round(h.tempF)+'°F':''}${h.windMph!=null?' · '+Math.round(h.windMph)+' mph wind':''}${h.pressureD24!=null?' · ΔP '+(h.pressureD24>0?'+':'')+h.pressureD24+' hPa/24h':''}`;
+    const isNow = isToday && h.hour===nowHour;
+    return `<div class="hh${isNow?' now':''}" title="${tip.replace(/"/g,'&quot;')}">
+      <div class="hh-bar ${scoreClass(h.score)}" style="height:${heightPct}%;width:100%"></div>
+      <div class="hh-tip">${tip}</div>
+    </div>`;
+  }).join('');
+  // Sunrise/sunset vertical lines
+  if(sunriseHour!=null){
+    const left = (sunriseHour/24)*100;
+    grid.insertAdjacentHTML('beforeend', `<div class="solar-line" style="left:${left}%" data-label="↑ ${formatHourDecimal(sunriseHour)}"></div>`);
+  }
+  if(sunsetHour!=null){
+    const left = (sunsetHour/24)*100;
+    grid.insertAdjacentHTML('beforeend', `<div class="solar-line sunset" style="left:${left}%" data-label="↓ ${formatHourDecimal(sunsetHour)}"></div>`);
+  }
+  // Hour axis: label every 3rd hour
+  axis.innerHTML = hourly.map(h => {
+    const lab = h.hour%3===0 ? (h.hour===0?'12a':h.hour===12?'12p':h.hour<12?h.hour+'a':(h.hour-12)+'p') : '';
+    return `<div class="${h.hour%6===0?'major':''}">${lab}</div>`;
+  }).join('');
+}
+
+function formatHourDecimal(h){
+  const hr = Math.floor(h);
+  const mn = Math.round((h-hr)*60);
+  const ampm = hr>=12?'PM':'AM';
+  const dh = hr%12 || 12;
+  return `${dh}:${String(mn).padStart(2,'0')} ${ampm}`;
+}
+
+function renderBestWindows(windows){
+  if(!windows || !windows.length){ $('windowsRow').innerHTML=''; return; }
+  $('windowsRow').innerHTML = windows.map((w,i) => `
+    <div class="w-cell${i===0?' primary':''}">
+      <div class="w-range">${w.rangeLabel}</div>
+      <div class="w-peak">PEAK ${w.peakScore}/100</div>
+      <div class="w-why">${w.why}</div>
+    </div>`).join('');
+}
+
+let _spotsData = null;
+let _activeTab = 'forests';
+
+function renderSpots(spots){
+  _spotsData = spots || {};
+  $('spotsIntro').textContent = _spotsData.intro || '';
+  const tabs = [
+    {key:'forests', label:'FORESTS'},
+    {key:'wmas',    label:'WMAs / GAME LANDS'},
+    {key:'refuges', label:'REFUGES'},
+  ].filter(t => (_spotsData[t.key]||[]).length>0);
+  if(!tabs.length){
+    $('spotTabs').innerHTML = '';
+    $('spotCards').innerHTML = '<div style="color:var(--text-muted);font-family:JetBrains Mono,monospace;font-size:.7rem;letter-spacing:1px">NO PUBLIC LAND DATA FOR THIS AREA</div>';
+    return;
+  }
+  if(!tabs.find(t=>t.key===_activeTab)) _activeTab = tabs[0].key;
+  $('spotTabs').innerHTML = tabs.map(t =>
+    `<div class="tab${t.key===_activeTab?' active':''}" onclick="switchSpotTab('${t.key}')">${t.label} (${(_spotsData[t.key]||[]).length})</div>`
+  ).join('');
+  renderSpotCards();
+}
+window.switchSpotTab = (k) => { _activeTab=k; renderSpots(_spotsData); };
+
+function renderSpotCards(){
+  const list = _spotsData[_activeTab] || [];
+  $('spotCards').innerHTML = list.map(s => {
+    const game = (s.game||[]).map(g => `<span class="sp-game-pill">${g}</span>`).join('');
+    const meta = [s.access, s.size].filter(Boolean).map(x => `<span class="sp-meta-item">${x}</span>`).join('');
+    return `
+      <div class="spot-card${s.featured?' featured':''}">
+        <div class="sp-head">
+          <div>
+            <div class="sp-name">${s.name}</div>
+            <div class="sp-dist">${s.distance||''}</div>
+          </div>
+          <div class="sp-rating ${s.rating||'GOOD'}">${s.rating||'GOOD'}</div>
+        </div>
+        <div class="sp-desc">${s.description||''}</div>
+        ${game?`<div class="sp-game">${game}</div>`:''}
+        ${s.tip?`<div class="sp-tip">${s.tip}</div>`:''}
+        ${meta?`<div class="sp-meta">${meta}</div>`:''}
+      </div>`;
+  }).join('');
+}
+
+async function renderReport(lat,lon,name,dayIdx){
+  showLoader(true,'BUILDING THE HUNT REPORT…');
+  hideErr();
+  try{
+    const data = await fetchReport(lat,lon,name,dayIdx);
+    const ai = data.ai || data.analysis;
+    _lastWeather = data.weather;
+    if(_lastWeather && _lastWeather.daily) buildDayPicker(_lastWeather.daily);
+    const now = new Date();
+    $('rName').textContent = (name||'YOUR LOCATION').toUpperCase();
+    $('rMeta').textContent = `${lat.toFixed(4)}°N  ${Math.abs(lon).toFixed(4)}°${lon<0?'W':'E'}  ·  ${(ai.season||'').toUpperCase()}${data.analysis.zone?'  ·  '+data.analysis.zone:''}`;
+    $('rTs').innerHTML = (dayIdx===0 ? 'REPORT GENERATED' : 'FORECAST FOR') + '<br>' +
+      now.toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric'}) +
+      (dayIdx===0 ? ' at '+now.toLocaleString('en-US',{hour:'2-digit',minute:'2-digit'}) : '');
+    const banner = $('fcBanner');
+    if(dayIdx>0){ banner.classList.add('show'); banner.textContent = `7-DAY FORECAST · DAY +${dayIdx} · ${data.analysis.dayLabel||''}`; }
+    else banner.classList.remove('show');
+
+    renderVerdict(ai);
+    renderConditions(data.weather, data.analysis);
+    renderWindMoon(ai);
+    renderGame(ai.game);
+    renderHourlyChart(ai.hourly, ai.sunriseHour, ai.sunsetHour, dayIdx===0);
+    renderBestWindows(ai.bestWindows);
+    renderSpots(ai.publicLands || data.spots);
+
+    $('rpt').style.display = 'block';
+    $('rpt').dataset.hasReport = '1';
+    if(dayIdx===0) $('rpt').scrollIntoView({behavior:'smooth',block:'start'});
+  } catch(e){
+    console.error(e);
+    showErr('Could not build report — ' + e.message);
+  } finally {
+    showLoader(false);
+  }
+}
+
+async function runSearch(query){
+  hideErr();
+  showLoader(true,'LOOKING UP THE GROUND…');
+  try{
+    const loc = await geocode(query);
+    if(loc.error || loc.lat==null){ showErr(loc.error||'Could not find that location'); showLoader(false); return; }
+    _lastLat = loc.lat; _lastLon = loc.lon; _lastName = loc.name || query; _lastDayIdx = 0;
+    await renderReport(_lastLat,_lastLon,_lastName,0);
+  } catch(e){
+    console.error(e);
+    showErr('Search failed — ' + e.message);
+    showLoader(false);
+  }
+}
+
+$('searchBtn').onclick = () => {
+  const q = $('locInput').value.trim();
+  if(q) runSearch(q);
+};
+$('locInput').addEventListener('keydown', e => { if(e.key==='Enter') $('searchBtn').click(); });
+
+$('gpsBtn').onclick = () => {
+  if(!navigator.geolocation){ showErr('Geolocation not supported'); return; }
+  showLoader(true,'GETTING YOUR LOCATION…');
+  navigator.geolocation.getCurrentPosition(async pos => {
+    _lastLat = pos.coords.latitude;
+    _lastLon = pos.coords.longitude;
+    _lastName = `${_lastLat.toFixed(3)}°N, ${Math.abs(_lastLon).toFixed(3)}°${_lastLon<0?'W':'E'}`;
+    _lastDayIdx = 0;
+    await renderReport(_lastLat,_lastLon,_lastName,0);
+  }, err => {
+    showErr('Location error: ' + err.message);
+    showLoader(false);
+  }, {timeout:10000});
+};
+</script>
+</body>
+</html>

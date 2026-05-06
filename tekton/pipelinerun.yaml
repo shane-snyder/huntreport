@@ -1,0 +1,35 @@
+---
+# Manual PipelineRun — use this to trigger a build manually:
+#   oc -n huntreport create -f tekton/pipelinerun.yaml
+#
+# Note: use "oc create" (not "oc apply") so each run gets a unique name suffix.
+
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: huntreport-build-deploy-
+  namespace: huntreport
+spec:
+  pipelineRef:
+    name: huntreport-build-deploy
+
+  params:
+    - name: git-url
+      value: https://github.com/shane-snyder/huntreport.git
+    - name: git-revision
+      value: main
+    - name: image
+      value: quay-server.apps.sno-mini.shanehomelab.com/shane/huntreport:latest
+
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 1Gi
+
+    - name: dockerconfig
+      secret:
+        secretName: quay-push-secret

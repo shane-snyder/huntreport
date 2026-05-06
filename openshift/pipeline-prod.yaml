@@ -1,0 +1,136 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: huntreport-prod
+spec:
+  params:
+    - name: git-url
+      type: string
+      default: https://github.com/shane-snyder/huntreport.git
+    - name: image-registry
+      type: string
+      default: quay-server.apps.sno-mini.shanehomelab.com/shane/huntreport
+
+  workspaces:
+    - name: source
+    - name: dockerconfig
+      description: Quay registry credentials (.dockerconfigjson)
+    - name: basic-auth
+      description: Git basic-auth credentials for private repos
+      optional: true
+
+  tasks:
+    - name: git-clone
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: URL
+          value: $(params.git-url)
+        - name: REVISION
+          value: main
+        - name: DELETE_EXISTING
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: source
+        - name: basic-auth
+          workspace: basic-auth
+
+    - name: compute-version
+      runAfter: [git-clone]
+      taskSpec:
+        results:
+          - name: VERSION
+            description: Next sequential prod version number
+        steps:
+          - name: next-version
+            image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+            script: |
+              #!/bin/bash
+              CURRENT=$(oc get configmap huntreport-version -o jsonpath='{.data.version}' 2>/dev/null || echo "0")
+              NEXT=$((CURRENT + 1))
+              printf '%s' "${NEXT}" > $(results.VERSION.path)
+              echo "Version: prod-${NEXT} (previous: ${CURRENT})"
+
+    - name: build-push
+      runAfter: [compute-version]
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: IMAGE
+          value: $(params.image-registry):latest
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: CONTEXT
+          value: .
+        - name: TLS_VERIFY
+          value: "false"
+      workspaces:
+        - name: source
+          workspace: source
+        - name: dockerconfig
+          workspace: dockerconfig
+
+    - name: tag-version
+      runAfter: [build-push]
+      taskSpec:
+        params:
+          - name: SRC_IMAGE
+          - name: DST_IMAGE
+        workspaces:
+          - name: dockerconfig
+        steps:
+          - name: copy
+            image: quay.io/skopeo/stable:latest
+            script: |
+              #!/bin/bash
+              skopeo copy \
+                --src-tls-verify=false --dest-tls-verify=false \
+                --authfile $(workspaces.dockerconfig.path)/.dockerconfigjson \
+                docker://$(params.SRC_IMAGE) \
+                docker://$(params.DST_IMAGE)
+              echo "Tagged $(params.DST_IMAGE)"
+      params:
+        - name: SRC_IMAGE
+          value: $(params.image-registry):latest
+        - name: DST_IMAGE
+          value: $(params.image-registry):prod-$(tasks.compute-version.results.VERSION)
+      workspaces:
+        - name: dockerconfig
+          workspace: dockerconfig
+
+    - name: deploy
+      runAfter: [tag-version]
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: openshift-client
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: SCRIPT
+          value: |
+            oc rollout restart deployment/huntreport
+            oc rollout status deployment/huntreport --timeout=120s
+            VERSION="$(tasks.compute-version.results.VERSION)"
+            oc create configmap huntreport-version \
+              --from-literal=version=${VERSION} \
+              --dry-run=client -o yaml | oc apply -f -
+            echo "Deployed prod-${VERSION}"

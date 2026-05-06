@@ -1,0 +1,189 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: huntreport-dev
+spec:
+  params:
+    - name: git-url
+      type: string
+      default: https://github.com/shane-snyder/huntreport.git
+    - name: git-revision
+      type: string
+      description: Branch name to build
+    - name: image-registry
+      type: string
+      default: quay-server.apps.sno-mini.shanehomelab.com/shane/huntreport
+
+  workspaces:
+    - name: source
+    - name: dockerconfig
+      description: Quay registry credentials (.dockerconfigjson)
+    - name: basic-auth
+      description: Git basic-auth credentials for private repos
+      optional: true
+
+  tasks:
+    - name: git-clone
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: URL
+          value: $(params.git-url)
+        - name: REVISION
+          value: $(params.git-revision)
+        - name: DELETE_EXISTING
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: source
+        - name: basic-auth
+          workspace: basic-auth
+
+    - name: normalize-branch
+      runAfter: [git-clone]
+      taskSpec:
+        params:
+          - name: BRANCH
+        results:
+          - name: SAFE_NAME
+            description: Branch name sanitized for use in k8s resource names
+        steps:
+          - name: normalize
+            image: alpine
+            script: |
+              #!/bin/sh
+              SAFE=$(echo "$(params.BRANCH)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
+              printf '%s' "${SAFE}" > $(results.SAFE_NAME.path)
+              echo "Normalized '$(params.BRANCH)' → '${SAFE}'"
+      params:
+        - name: BRANCH
+          value: $(params.git-revision)
+
+    - name: build-push
+      runAfter: [normalize-branch]
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: IMAGE
+          value: $(params.image-registry):dev-$(tasks.normalize-branch.results.SAFE_NAME)
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: CONTEXT
+          value: .
+        - name: TLS_VERIFY
+          value: "false"
+      workspaces:
+        - name: source
+          workspace: source
+        - name: dockerconfig
+          workspace: dockerconfig
+
+    - name: deploy
+      runAfter: [build-push]
+      taskSpec:
+        params:
+          - name: APP_NAME
+          - name: IMAGE
+        steps:
+          - name: deploy
+            image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+            script: |
+              #!/bin/bash
+              APP="$(params.APP_NAME)"
+              IMAGE="$(params.IMAGE)"
+              cat <<EOF | oc apply -f -
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: ${APP}
+                labels:
+                  app: ${APP}
+                  app.kubernetes.io/part-of: huntreport
+              spec:
+                replicas: 1
+                selector:
+                  matchLabels:
+                    app: ${APP}
+                template:
+                  metadata:
+                    labels:
+                      app: ${APP}
+                  spec:
+                    containers:
+                      - name: huntreport
+                        image: ${IMAGE}
+                        imagePullPolicy: Always
+                        ports:
+                          - containerPort: 8080
+                            protocol: TCP
+                        resources:
+                          requests:
+                            cpu: 100m
+                            memory: 128Mi
+                          limits:
+                            cpu: 500m
+                            memory: 256Mi
+                        livenessProbe:
+                          httpGet:
+                            path: /api/health
+                            port: 8080
+                          initialDelaySeconds: 5
+                          periodSeconds: 30
+                        readinessProbe:
+                          httpGet:
+                            path: /api/health
+                            port: 8080
+                          initialDelaySeconds: 3
+                          periodSeconds: 10
+              ---
+              apiVersion: v1
+              kind: Service
+              metadata:
+                name: ${APP}
+                labels:
+                  app: ${APP}
+              spec:
+                selector:
+                  app: ${APP}
+                ports:
+                  - port: 8080
+                    targetPort: 8080
+                    protocol: TCP
+                    name: http
+              ---
+              apiVersion: route.openshift.io/v1
+              kind: Route
+              metadata:
+                name: ${APP}
+                labels:
+                  app: ${APP}
+              spec:
+                to:
+                  kind: Service
+                  name: ${APP}
+                port:
+                  targetPort: http
+                tls:
+                  termination: edge
+                  insecureEdgeTerminationPolicy: Redirect
+              EOF
+              oc rollout status deployment/${APP} --timeout=120s
+      params:
+        - name: APP_NAME
+          value: huntreport-$(tasks.normalize-branch.results.SAFE_NAME)
+        - name: IMAGE
+          value: $(params.image-registry):dev-$(tasks.normalize-branch.results.SAFE_NAME)
