@@ -17,24 +17,24 @@ The PAT and Quay credentials are reused from `sno/openshift-gitops/repo-castrepo
 
 ## Apply order
 
+The agent runs in autonomous mode, so the Application's source-of-truth is on the **spoke** (sno-mini); the hub holds a status mirror.
+
 ```bash
 # 1. Hub: register the repo cred (3 namespaces × 1 ExternalSecret each)
 oc login -u kubeadmin -p "$(cat ~/Documents/SNO/kubeadmin)" \
   --server=https://api.sno.shanehomelab.com:6443
 oc apply -f bootstrap/repo-cred-hub.yaml
 
-# 2. Spoke: register the repo cred there too (agent-based ArgoCD needs it on both sides)
+# 2. Spoke: register the repo cred AND the Application
 oc login -u kubeadmin -p "$(cat ~/Documents/SNO-MINI/kubeadmin)" \
   --server=https://api.sno-mini.shanehomelab.com:6443
 oc apply -f bootstrap/repo-cred-spoke.yaml
-
-# 3. Hub: register the Application
-oc login -u kubeadmin -p "$(cat ~/Documents/SNO/kubeadmin)" \
-  --server=https://api.sno.shanehomelab.com:6443
 oc apply -f bootstrap/argocd-application.yaml
 
-# 4. Watch sync
-oc -n argocd-agent-sno-mini get application huntreport -w
+# 3. Watch sync (either on the spoke directly or via the hub mirror)
+oc -n argocd-agent get application huntreport -w
+# or, on the hub:
+#   oc -n argocd-agent-sno-mini get application huntreport -w
 ```
 
 Once `Synced` and `Healthy`, the app is reachable on sno-mini at:

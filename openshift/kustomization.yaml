@@ -9,4 +9,5 @@ resources:
   - pipeline-dev.yaml
   - external-secret-quay-push.yaml
   - external-secret-github-token.yaml
+  - external-secret-git-basic-auth.yaml
   - cronjob-poll.yaml

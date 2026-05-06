@@ -1,29 +1,25 @@
 ---
-# Source-of-truth ArgoCD Application for HuntReport.
+# Source-of-truth ArgoCD Application for HuntReport (autonomous-mode agent).
 #
-# Apply this on the SNO HUB cluster — it lives in argocd-agent-sno-mini and
-# the agent dispatches it down to the sno-mini spoke for sync.
+# In agent-based ArgoCD with the autonomous-agent pattern, the Application is
+# created on the SPOKE cluster (sno-mini) in the local `argocd-agent`
+# namespace. The agent's principal then mirrors it back up to the hub at
+# `argocd-agent-sno-mini/<name>` for status visibility — but the spoke is the
+# source of truth for the spec.
 #
-# Prerequisites on sno-mini (managed elsewhere — already present):
-#   - openshift-pipelines operator
-#   - external-secrets operator + ClusterSecretStore "vault-sno-mini"
-#   - Vault path huntreport/quay-push-secret with property .dockerconfigjson
-#   - Vault path openshift-gitops/repo-huntreport with property "password"
-#     (GitHub PAT used by the polling CronJob)
-#
-# Apply:
-#   oc login -u kubeadmin -p $(cat ~/Documents/SNO/kubeadmin) \
-#     --server=https://api.sno.shanehomelab.com:6443
+# Apply on sno-mini, not on sno hub:
+#   oc login -u kubeadmin -p $(cat ~/Documents/SNO-MINI/kubeadmin) \
+#     --server=https://api.sno-mini.shanehomelab.com:6443
 #   oc apply -f bootstrap/argocd-application.yaml
 #
-# Then watch it sync:
-#   oc get application -n argocd-agent-sno-mini huntreport -w
+# Watch the mirror on the hub:
+#   oc -n argocd-agent-sno-mini get application huntreport -w
 
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: huntreport
-  namespace: argocd-agent-sno-mini
+  namespace: argocd-agent
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -32,10 +28,10 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "10"
 spec:
-  project: argocd-agent-sno-mini-cluster-config
+  project: cluster-config
   destination:
-    name: argocd-agent-sno-mini
     namespace: huntreport
+    server: https://kubernetes.default.svc
   source:
     path: openshift
     repoURL: https://github.com/shane-snyder/huntreport.git
