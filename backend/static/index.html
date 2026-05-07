@@ -54,11 +54,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 
 /* ── BIG HERO NUMBER for the selected day ── */
 .bignum{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 30px;margin-bottom:18px}
-.bn-num{font-family:'Bebas Neue',sans-serif;font-size:5.6rem;line-height:.95;letter-spacing:1px}
-.bn-num.s5{color:var(--prime)}
-.bn-num.s4{color:var(--good)}
-.bn-num.s3{color:var(--fair)}
-.bn-num.s2,.bn-num.s1{color:var(--text3)}
+.bn-num{font-family:'Bebas Neue',sans-serif;font-size:5.6rem;line-height:.95;letter-spacing:1px;color:var(--gold)}
 .bn-suffix{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;color:var(--text3);margin-left:4px}
 .bn-meta{display:flex;flex-direction:column;gap:6px;text-align:right}
 .bn-row{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:1.5px;color:var(--text3)}
@@ -73,11 +69,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .dc.best::before{content:'★';position:absolute;top:-8px;left:50%;transform:translateX(-50%);color:var(--gold);font-size:.8rem;background:var(--bg);padding:0 4px}
 .dc-day{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:2px;color:var(--text3);font-weight:700}
 .dc.active .dc-day{color:var(--gold)}
-.dc-num{font-family:'Bebas Neue',sans-serif;font-size:2rem;line-height:1;margin:6px 0 2px;letter-spacing:.5px}
-.dc-num.s5{color:var(--prime)}
-.dc-num.s4{color:var(--good)}
-.dc-num.s3{color:var(--fair)}
-.dc-num.s2,.dc-num.s1{color:var(--text3)}
+.dc-num{font-family:'Bebas Neue',sans-serif;font-size:2rem;line-height:1;margin:6px 0 2px;letter-spacing:.5px;color:var(--gold)}
 .dc-pct{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:.5px}
 .dc-tlo{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:.5px;margin-top:5px}
 .dc-icon{font-size:.95rem;margin-top:3px;line-height:1}
@@ -91,11 +83,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .hh:hover{filter:brightness(1.25)}
 .hh.now{outline:2px solid var(--rust);outline-offset:2px;z-index:3;border-radius:3px 3px 4px 4px}
 .hh-bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;position:relative;z-index:1;box-shadow:0 -1px 0 rgba(255,255,255,.05) inset}
-.hh-bar.s5{background:linear-gradient(180deg,#f0d878 0%,#e6b450 100%)}
-.hh-bar.s4{background:linear-gradient(180deg,#b8d250 0%,#8aa53a 100%)}
-.hh-bar.s3{background:linear-gradient(180deg,#b08d57 0%,#8a6f3a 100%)}
-.hh-bar.s2{background:linear-gradient(180deg,#5a5230 0%,#3a3525 100%)}
-.hh-bar.s1{background:linear-gradient(180deg,#3a3525 0%,#252010 100%)}
 .hh-pct{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.55rem;font-weight:700;letter-spacing:0;white-space:nowrap;color:var(--text2);display:none;z-index:4}
 .hh.peak .hh-pct{display:block;color:var(--gold)}
 .hh-axis{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text3);margin-top:6px;text-align:center}
@@ -106,9 +93,12 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .hh-tip-row{margin:2px 0}
 .hh:hover .hh-tip{display:block}
 
-.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:1px}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:1px}
 .lg-item{display:flex;align-items:center;gap:5px}
 .lg-dot{width:10px;height:10px;border-radius:2px}
+.lg-scale{display:flex;flex-direction:column;flex:1;min-width:240px;max-width:340px}
+.lg-bar{height:8px;border-radius:4px}
+.lg-ticks{display:flex;justify-content:space-between;margin-top:3px;font-size:.5rem;color:var(--text3);letter-spacing:0}
 
 /* ── Compact conditions row ── */
 .cond{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
@@ -183,13 +173,9 @@ footer{padding:24px 20px;text-align:center;border-top:1px solid var(--border);fo
     <div class="hourly-grid" id="hourlyGrid"></div>
     <div class="hh-axis" id="hourlyAxis"></div>
     <div class="legend">
-      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#f0d878,#e6b450)"></span>80–100%</span>
-      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#b8d250,#8aa53a)"></span>65–79%</span>
-      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#b08d57,#8a6f3a)"></span>45–64%</span>
-      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#5a5230,#3a3525)"></span>30–44%</span>
-      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#3a3525,#252010)"></span>&lt;30%</span>
-      <span class="lg-item"><span class="lg-dot" style="background:rgba(230,180,80,.55);width:2px"></span>SUNRISE</span>
-      <span class="lg-item"><span class="lg-dot" style="background:rgba(198,106,58,.55);width:2px"></span>SUNSET</span>
+      <div class="lg-scale" id="lgScale"></div>
+      <span class="lg-item"><span class="lg-dot" style="background:rgba(230,180,80,.7);width:2px"></span>SUNRISE</span>
+      <span class="lg-item"><span class="lg-dot" style="background:rgba(198,106,58,.7);width:2px"></span>SUNSET</span>
     </div>
   </div>
 
@@ -215,12 +201,38 @@ function hideErr(){ $('errBox').style.display='none'; }
 
 const WX = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'❄️',80:'🌧',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
 
-function scoreClass(s){
-  if(s>=80) return 's5';
-  if(s>=65) return 's4';
-  if(s>=45) return 's3';
-  if(s>=30) return 's2';
-  return 's1';
+// Continuous score → color. HSL interpolation along an earth-tone gradient
+// from dark earth (low) → olive (mid) → gold (high). No discrete bands, so
+// adjacent bars with similar scores look similar.
+function scoreColor(s){
+  const t = Math.max(0, Math.min(100, s)) / 100;
+  // hue 32 → 46 (warm brown → gold)
+  const h = 32 + t * 14;
+  const sat = 18 + t * 62;
+  const lit = 12 + t * 44;
+  const top = `hsl(${h}, ${sat}%, ${Math.min(70, lit + 10)}%)`;
+  const bot = `hsl(${h}, ${sat}%, ${lit}%)`;
+  return `linear-gradient(180deg, ${top} 0%, ${bot} 100%)`;
+}
+// Coarser tier for the day cards / big number — same gradient endpoints
+function scoreTextColor(s){
+  const t = Math.max(0, Math.min(100, s)) / 100;
+  const h = 32 + t * 14;
+  const sat = 30 + t * 55;
+  const lit = 35 + t * 30;
+  return `hsl(${h}, ${sat}%, ${lit}%)`;
+}
+function buildLegendScale(){
+  const stops = [];
+  for (let s = 0; s <= 100; s += 10){
+    const t = s/100;
+    const h = 32 + t * 14, sat = 18 + t * 62, lit = 12 + t * 44;
+    stops.push(`hsl(${h}, ${sat}%, ${lit}%) ${s}%`);
+  }
+  const el = document.getElementById('lgScale');
+  if (el) el.innerHTML =
+    `<div class="lg-bar" style="background:linear-gradient(90deg, ${stops.join(',')})"></div>
+     <div class="lg-ticks"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>`;
 }
 function fmtHour(h){
   if(h===0) return '12 AM';
@@ -256,7 +268,6 @@ function renderHeader(d){
 
 function renderBigNum(d){
   const score = d.score || 0;
-  const cls = scoreClass(score);
   const peakLabel = fmtHour(d.peakHour||0);
   const factors = (d.peakFactors||[]).slice(0,3).join(' · ').toUpperCase() || 'CHECK CONDITIONS';
   const moonIcon = (d.moon && d.moon.icon) || '';
@@ -264,7 +275,7 @@ function renderBigNum(d){
   const moonPct = d.moon && d.moon.illumination!=null ? Math.round(d.moon.illumination*100)+'%' : '';
   $('bignum').innerHTML = `
     <div>
-      <div><span class="bn-num ${cls}">${score}</span><span class="bn-suffix">%</span></div>
+      <div><span class="bn-num" style="color:${scoreTextColor(score)}">${score}</span><span class="bn-suffix">%</span></div>
       <div class="bn-row" style="margin-top:6px">PEAK · <strong>${peakLabel}</strong></div>
     </div>
     <div class="bn-meta">
@@ -281,12 +292,11 @@ function renderWeek(d){
     const date = new Date(day.date + 'T00:00');
     const dn = i===0 ? 'TODAY' : date.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
     const wc = WX[day.weatherCode] || '';
-    const cls = scoreClass(day.peakScore);
     const tHi = day.tempMaxF!=null ? Math.round(day.tempMaxF) : '—';
     const tLo = day.tempMinF!=null ? Math.round(day.tempMinF) : '—';
     return `<div class="dc${i===_last.dayIdx?' active':''}${i===best?' best':''}" onclick="selectDay(${i})">
       <div class="dc-day">${dn}</div>
-      <div class="dc-num ${cls}">${day.peakScore}</div>
+      <div class="dc-num" style="color:${scoreTextColor(day.peakScore)}">${day.peakScore}</div>
       <div class="dc-pct">PEAK ${fmtHour(day.peakHour)}</div>
       <div class="dc-icon">${wc}</div>
       <div class="dc-tlo">${tHi}° / ${tLo}°</div>
@@ -313,7 +323,7 @@ function renderHourly(d, isToday){
     const isNow = isToday && h.hour===nowHour;
     const isPeak = h.hour===peak.hour;
     return `<div class="hh${isNow?' now':''}${isPeak?' peak':''}">
-      <div class="hh-bar ${scoreClass(h.score)}" style="height:${heightPct}%"></div>
+      <div class="hh-bar" style="height:${heightPct}%;background:${scoreColor(h.score)}"></div>
       <div class="hh-pct">${h.score}%</div>
       <div class="hh-tip">${tip}</div>
     </div>`;
@@ -416,6 +426,7 @@ async function runSearch(q){
 
 $('searchBtn').onclick = () => { const q=$('locInput').value.trim(); if(q) runSearch(q); };
 $('locInput').addEventListener('keydown', e => { if(e.key==='Enter') $('searchBtn').click(); });
+buildLegendScale();
 $('gpsBtn').onclick = () => {
   if(!navigator.geolocation){ showErr('Geolocation not supported'); return; }
   showLoader(true);
