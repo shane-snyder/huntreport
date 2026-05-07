@@ -3,199 +3,138 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HuntReport — Hunting Intelligence</title>
+<title>HuntReport — Whitetail Movement</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0c0e08;--surface:#15180f;--surface2:#1c2014;--surface3:#252a18;
-  --border:rgba(176,141,87,.20);--border2:rgba(176,141,87,.32);
-  --accent:#b08d57;--gold:#e6b450;--rust:#c66a3a;--olive:#6f7a3a;--blood:#8a2b2b;
-  --text:#ece5d4;--text-secondary:rgba(236,229,212,.66);--text-muted:rgba(236,229,212,.40);
-  --good:#8aa53a;--fair:#e6b450;--poor:#c66a3a;--great:#b08d57;
+  --border:rgba(176,141,87,.22);--border2:rgba(176,141,87,.36);
+  --gold:#e6b450;--rust:#c66a3a;--olive:#8aa53a;--blood:#8a2b2b;
+  --text:#ece5d4;--text2:rgba(236,229,212,.66);--text3:rgba(236,229,212,.40);
+  --prime:#e6b450;--good:#8aa53a;--fair:#b08d57;--slow:#5a5230;--poor:#3a3525;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
 
-/* ── Top bar ── */
 .top-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(12,14,8,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:5px;color:var(--accent)}
-.logo span{color:var(--gold)}
-.tag-pill{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:2px;color:var(--text-muted);border:1px solid var(--border);padding:4px 10px;border-radius:999px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:5px;color:var(--gold)}
+.tag{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:2px;color:var(--text3);border:1px solid var(--border);padding:4px 10px;border-radius:999px}
 
-/* ── Hero ── */
-.hero{text-align:center;padding:80px 20px 60px;background:linear-gradient(140deg,#0c0e08 0%,#15180f 40%,#252a18 80%,#3a3a1f 100%);position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
-.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 16% 18%,rgba(230,180,80,.18) 0%,transparent 55%),radial-gradient(ellipse at 84% 60%,rgba(111,122,58,.18) 0%,transparent 60%);pointer-events:none}
-.hero > *{position:relative;z-index:1}
-.headline{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,8vw,6.2rem);letter-spacing:8px;line-height:.95;color:#fff;text-shadow:0 16px 32px rgba(0,0,0,.5)}
+.hero{padding:54px 20px 36px;background:linear-gradient(140deg,#0c0e08 0%,#15180f 50%,#252a18 100%);border-bottom:1px solid var(--border);text-align:center}
+.headline{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.6rem,7vw,5rem);letter-spacing:7px;line-height:.95;color:#fff;margin-bottom:6px}
 .headline span{color:var(--gold)}
-.tagline{font-family:'Crimson Pro',serif;font-style:italic;color:rgba(255,255,255,.7);margin:14px 0 30px;font-size:1.1rem;letter-spacing:.5px}
-.search-wrap{display:flex;gap:10px;max-width:680px;margin:0 auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:10px;backdrop-filter:blur(8px)}
-.s-input{flex:1;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:14px 18px;color:#fff;font-family:'Inter',system-ui,sans-serif;font-size:1.05rem;outline:none;transition:border .2s,box-shadow .2s}
-.s-input:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(230,180,80,.18)}
+.sub{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:2px;color:var(--text3);margin-bottom:28px}
+.search-wrap{display:flex;gap:8px;max-width:640px;margin:0 auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:8px}
+.s-input{flex:1;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:12px 18px;color:#fff;font-family:'Inter',sans-serif;font-size:1rem;outline:none}
+.s-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(230,180,80,.16)}
 .s-input::placeholder{color:rgba(255,255,255,.45)}
-.s-btn{background:var(--gold);border:none;border-radius:999px;padding:14px 26px;color:#1c1707;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;cursor:pointer;transition:opacity .2s;white-space:nowrap;box-shadow:0 12px 26px rgba(230,180,80,.22)}
+.s-btn{background:var(--gold);border:none;border-radius:999px;padding:12px 22px;color:#1c1707;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2.5px;cursor:pointer;white-space:nowrap}
 .s-btn:hover{opacity:.85}
-.gps-btn{background:none;border:1px solid rgba(255,255,255,.22);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:2px;padding:10px 18px;border-radius:999px;cursor:pointer;margin-top:14px;transition:all .2s}
+.gps-btn{background:none;border:1px solid rgba(255,255,255,.22);color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:2px;padding:8px 16px;border-radius:999px;cursor:pointer;margin-top:12px}
 .gps-btn:hover{border-color:var(--gold);background:rgba(230,180,80,.10)}
+.err{display:none;margin:14px auto 0;max-width:560px;padding:10px 14px;background:rgba(198,106,58,.14);border:1px solid rgba(198,106,58,.32);border-radius:8px;color:#e6936a;font-family:'JetBrains Mono',monospace;font-size:.7rem}
 
-/* ── Day picker ── */
-.day-picker{display:none;gap:8px;flex-wrap:wrap;margin-top:24px;justify-content:center;max-width:760px;margin-left:auto;margin-right:auto}
-.dp{display:flex;flex-direction:column;align-items:center;gap:4px;padding:11px 15px;border-radius:14px;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);font-family:'JetBrains Mono',monospace;transition:all .2s;min-width:90px;color:#fff}
-.dp:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)}
-.dp.active{background:rgba(230,180,80,.18);border-color:var(--gold);box-shadow:0 0 0 3px rgba(230,180,80,.12)}
-.dp-day{font-size:.7rem;letter-spacing:2px;color:rgba(255,255,255,.55);font-weight:700}
-.dp.active .dp-day{color:var(--gold)}
-.dp-date{font-size:.7rem;color:rgba(255,255,255,.45)}
-.dp-icon{font-size:1.4rem;margin:4px 0}
-.dp-hilo{font-size:.75rem;color:rgba(255,255,255,.85)}
+.loader{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px}
+.loader-bar{width:120px;height:2px;background:var(--surface3);border-radius:1px;overflow:hidden;position:relative}
+.loader-bar::after{content:'';position:absolute;top:0;left:-40%;width:40%;height:100%;background:var(--gold);animation:sweep 1s linear infinite}
+@keyframes sweep{to{left:100%}}
+.load-txt{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:2.5px;color:var(--text3)}
 
-.err{display:none;margin:14px auto 0;max-width:640px;padding:13px 18px;background:rgba(198,106,58,.14);border:1px solid rgba(198,106,58,.32);border-radius:8px;color:#e6936a;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:1px}
+#rpt{display:none;max-width:1100px;margin:0 auto;padding:24px 20px 60px}
 
-/* ── Loader ── */
-.loader{display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:18px}
-.deer-anim{font-size:2.6rem;animation:track .9s ease-in-out infinite alternate}
-@keyframes track{0%{transform:translateX(-8px)}100%{transform:translateX(8px)}}
-.load-txt{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:3px;color:var(--text-muted);animation:pulse 1.5s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+/* ── Header strip ── */
+.r-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px}
+.r-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3vw,2.4rem);letter-spacing:3px}
+.r-coords{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;color:var(--text3);margin-top:2px}
+.phase-pill{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:2px;padding:5px 10px;border-radius:999px;border:1px solid var(--border)}
+.phase-pill.peak_rut{border-color:var(--blood);background:rgba(138,43,43,.18);color:#d97070}
+.phase-pill.pre_rut,.phase-pill.post_rut{border-color:var(--gold);background:rgba(230,180,80,.10);color:var(--gold)}
+.phase-pill.late_season,.phase-pill.early_season{border-color:var(--olive);background:rgba(138,165,58,.14);color:#b8d250}
 
-/* ── Report ── */
-#rpt{display:none;max-width:1100px;margin:0 auto;padding:32px 20px 60px}
-.r-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-.r-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,3.5vw,3rem);letter-spacing:4px;color:var(--text)}
-.r-meta{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:2px;color:var(--text-muted);margin-top:4px}
-.r-ts{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;color:var(--text-muted);text-align:right}
+/* ── BIG HERO NUMBER for the selected day ── */
+.bignum{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 30px;margin-bottom:18px}
+.bn-num{font-family:'Bebas Neue',sans-serif;font-size:5.6rem;line-height:.95;letter-spacing:1px}
+.bn-num.s5{color:var(--prime)}
+.bn-num.s4{color:var(--good)}
+.bn-num.s3{color:var(--fair)}
+.bn-num.s2,.bn-num.s1{color:var(--text3)}
+.bn-suffix{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;color:var(--text3);margin-left:4px}
+.bn-meta{display:flex;flex-direction:column;gap:6px;text-align:right}
+.bn-row{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:1.5px;color:var(--text3)}
+.bn-row strong{color:var(--text);font-weight:700}
 
-.fc-banner{background:rgba(230,180,80,.08);border:1px solid rgba(230,180,80,.28);border-radius:8px;padding:9px 18px;margin-bottom:20px;font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:2px;color:rgba(230,180,80,.85);text-align:center;display:none}
-.fc-banner.show{display:block}
-
-/* ── Verdict ── */
-.verdict{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 30px;margin-bottom:28px;box-shadow:0 16px 36px rgba(0,0,0,.32)}
-.v-left{display:flex;align-items:center;gap:18px}
-.v-icon{font-size:2.4rem}
-.v-label{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:4px;color:var(--gold)}
-.v-desc{font-family:'Crimson Pro',serif;font-style:italic;color:var(--text-secondary);margin-top:6px;font-size:1rem;max-width:560px;line-height:1.5}
-.v-score{text-align:right}
-.v-num{font-family:'Bebas Neue',sans-serif;font-size:3.6rem;line-height:1;color:var(--gold)}
-.v-lbl{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--text-muted)}
-
-/* ── Section header ── */
-.sec{font-family:'Bebas Neue',sans-serif;letter-spacing:5px;color:var(--accent);font-size:1.25rem;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);text-transform:uppercase}
-
-/* ── Card grid ── */
-.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:30px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;position:relative;overflow:hidden}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--olive),var(--gold));opacity:.85}
-.c-lbl{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--text-muted);margin-bottom:8px}
-.c-val{font-family:'Bebas Neue',sans-serif;font-size:1.95rem;letter-spacing:1px;line-height:1;color:var(--text)}
-.c-unit{font-size:.9rem;color:var(--text-secondary);margin-left:2px}
-.c-sub{font-size:.78rem;color:var(--text-secondary);margin-top:5px;font-style:italic}
-
-/* ── Wind/moon box ── */
-.detail-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 24px;margin-bottom:28px}
-.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px}
-.dc{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px}
-.dc-lbl{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px}
-.dc-val{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;line-height:1;color:var(--text)}
-.dc-unit{font-size:.85rem;color:var(--text-secondary)}
-.dc-sub{font-size:.78rem;color:var(--text-secondary);margin-top:8px;font-style:italic}
-
-.compass{display:flex;align-items:center;gap:14px}
-.compass-rose{width:64px;height:64px;border:2px solid var(--border2);border-radius:50%;position:relative;flex-shrink:0;background:radial-gradient(circle,var(--surface3) 0%,var(--surface2) 100%)}
-.compass-rose::before,.compass-rose::after{content:'';position:absolute;background:rgba(176,141,87,.25)}
-.compass-rose::before{top:0;bottom:0;left:50%;width:1px;transform:translateX(-50%)}
-.compass-rose::after{left:0;right:0;top:50%;height:1px;transform:translateY(-50%)}
-.compass-arrow{position:absolute;top:50%;left:50%;width:3px;height:24px;background:var(--gold);transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(0deg);border-radius:2px;box-shadow:0 0 6px rgba(230,180,80,.5)}
-.compass-n{position:absolute;top:-2px;left:50%;transform:translate(-50%,-100%);font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text-muted);letter-spacing:1px}
-
-/* ── Game cards ── */
-.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:30px}
-.game-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;transition:transform .2s;position:relative;overflow:hidden}
-.game-card:hover{transform:translateY(-2px)}
-.game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);opacity:.7}
-.game-card.rut::before{background:var(--blood);opacity:1}
-.gc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
-.gc-name{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;color:var(--text)}
-.gc-cat{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1.5px;color:var(--text-muted);margin-top:2px;text-transform:uppercase}
-.gc-badge{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1.5px;padding:3px 8px;border-radius:4px;font-weight:700;flex-shrink:0}
-.gc-badge.HOT{background:rgba(198,106,58,.22);color:#e6936a;border:1px solid rgba(198,106,58,.34)}
-.gc-badge.ACTIVE{background:rgba(138,165,58,.18);color:#b8d250;border:1px solid rgba(138,165,58,.28)}
-.gc-badge.FAIR{background:rgba(230,180,80,.14);color:#e6b450;border:1px solid rgba(230,180,80,.22)}
-.gc-badge.SLOW{background:rgba(255,255,255,.04);color:var(--text-muted);border:1px solid var(--border)}
-.gc-tip{font-family:'Crimson Pro',serif;font-size:.95rem;color:var(--text-secondary);font-style:italic;line-height:1.5;margin-top:6px}
-.rut-flag{display:inline-block;background:rgba(138,43,43,.22);color:#d97070;border:1px solid rgba(138,43,43,.4);font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1.5px;padding:3px 7px;border-radius:4px;margin-top:8px}
+/* ── Week strip ── */
+.sec{font-family:'Bebas Neue',sans-serif;letter-spacing:5px;color:var(--gold);font-size:1rem;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border);text-transform:uppercase}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:6px}
+.dc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 8px;cursor:pointer;text-align:center;transition:all .15s;position:relative}
+.dc:hover{border-color:var(--border2);transform:translateY(-1px)}
+.dc.active{border-color:var(--gold);background:rgba(230,180,80,.10)}
+.dc.best::before{content:'★';position:absolute;top:-8px;left:50%;transform:translateX(-50%);color:var(--gold);font-size:.8rem;background:var(--bg);padding:0 4px}
+.dc-day{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:2px;color:var(--text3);font-weight:700}
+.dc.active .dc-day{color:var(--gold)}
+.dc-num{font-family:'Bebas Neue',sans-serif;font-size:2rem;line-height:1;margin:6px 0 2px;letter-spacing:.5px}
+.dc-num.s5{color:var(--prime)}
+.dc-num.s4{color:var(--good)}
+.dc-num.s3{color:var(--fair)}
+.dc-num.s2,.dc-num.s1{color:var(--text3)}
+.dc-pct{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:.5px}
+.dc-tlo{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:.5px;margin-top:5px}
+.dc-icon{font-size:.95rem;margin-top:3px;line-height:1}
 
 /* ── Hourly chart ── */
-.hourly-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 24px;margin-bottom:18px}
-.hourly-grid{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;align-items:end;height:140px;margin-top:14px;position:relative}
-.hh{position:relative;display:flex;align-items:flex-end;justify-content:center;border-radius:3px 3px 0 0;cursor:pointer;transition:filter .15s;min-height:6px;background:var(--surface3)}
+.hourly-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 22px;margin-bottom:18px;position:relative}
+.hourly-grid{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;align-items:end;height:170px;margin-top:8px;position:relative}
+.hh{position:relative;display:flex;align-items:flex-end;justify-content:center;border-radius:3px 3px 0 0;cursor:pointer;min-height:5px;background:var(--surface3)}
 .hh:hover{filter:brightness(1.4)}
 .hh.now{outline:2px solid var(--rust);outline-offset:1px;z-index:2}
-.hh-bar{width:100%;border-radius:3px 3px 0 0}
-.hh-bar.s5{background:linear-gradient(180deg,#f0d878 0%,#e6b450 100%)} /* prime 80+ */
-.hh-bar.s4{background:linear-gradient(180deg,#b8d250 0%,#8aa53a 100%)} /* good 65-79 */
-.hh-bar.s3{background:linear-gradient(180deg,#b08d57 0%,#8a6f3a 100%)} /* fair 45-64 */
-.hh-bar.s2{background:linear-gradient(180deg,#7a6230 0%,#4a3a1a 100%)} /* slow 30-44 */
-.hh-bar.s1{background:linear-gradient(180deg,#3a3525 0%,#252010 100%)} /* poor <30 */
-.hh-axis{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.5px;color:var(--text-muted);margin-top:6px;text-align:center}
-.hh-axis div{padding-top:2px}
-.hh-axis div.major{color:var(--text-secondary);font-weight:700}
-.solar-line{position:absolute;top:-6px;bottom:-2px;width:1px;background:rgba(230,180,80,.55);z-index:1;pointer-events:none}
+.hh-bar{width:100%;border-radius:3px 3px 0 0;position:relative}
+.hh-bar.s5{background:linear-gradient(180deg,#f0d878 0%,#e6b450 100%)}
+.hh-bar.s4{background:linear-gradient(180deg,#b8d250 0%,#8aa53a 100%)}
+.hh-bar.s3{background:linear-gradient(180deg,#b08d57 0%,#8a6f3a 100%)}
+.hh-bar.s2{background:linear-gradient(180deg,#5a5230 0%,#3a3525 100%)}
+.hh-bar.s1{background:linear-gradient(180deg,#3a3525 0%,#252010 100%)}
+.hh-pct{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text2);font-weight:700;letter-spacing:0;white-space:nowrap;display:none}
+.hh.peak .hh-pct{display:block;color:var(--gold)}
+.hh-axis{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text3);margin-top:5px;text-align:center}
+.solar-line{position:absolute;top:-6px;bottom:0;width:1px;background:rgba(230,180,80,.55);z-index:1;pointer-events:none}
 .solar-line.sunset{background:rgba(198,106,58,.55)}
-.solar-line::after{content:attr(data-label);position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.5px;color:var(--text-muted);white-space:nowrap}
-.hh-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.5px;color:var(--text);white-space:nowrap;display:none;z-index:5;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+.solar-line::after{content:attr(data-label);position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text3);white-space:nowrap}
+.hh-tip{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text);white-space:nowrap;display:none;z-index:5;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.hh-tip-row{margin:2px 0}
 .hh:hover .hh-tip{display:block}
-.hourly-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1px;color:var(--text-muted)}
-.hl-item{display:flex;align-items:center;gap:5px}
-.hl-dot{width:10px;height:10px;border-radius:2px}
 
-/* Best windows pulled out of the curve */
-.windows-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:30px}
-.w-cell{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
-.w-cell.primary{border-color:var(--gold);background:rgba(230,180,80,.08)}
-.w-range{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:3px;color:var(--text)}
-.w-cell.primary .w-range{color:var(--gold)}
-.w-peak{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--text-muted);margin-top:4px}
-.w-why{font-family:'Crimson Pro',serif;font-style:italic;font-size:.85rem;color:var(--text-secondary);margin-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:1px}
+.lg-item{display:flex;align-items:center;gap:5px}
+.lg-dot{width:10px;height:10px;border-radius:2px}
 
-/* ── Spots ── */
-.spots-section{margin-bottom:30px}
-.tab-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.tab{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:2px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);cursor:pointer;transition:all .2s}
-.tab:hover{border-color:var(--accent);color:var(--accent)}
-.tab.active{background:var(--accent);border-color:var(--accent);color:#1c1707}
-.spot-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-.spot-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;position:relative;overflow:hidden}
-.spot-card.featured{border-color:var(--gold);box-shadow:0 0 0 1px rgba(230,180,80,.18)}
-.spot-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);opacity:.6}
-.spot-card.featured::before{background:linear-gradient(90deg,var(--gold),var(--rust));opacity:1}
-.sp-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
-.sp-name{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;color:var(--text)}
-.sp-dist{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--text-muted);margin-top:4px}
-.sp-rating{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1.5px;padding:3px 8px;border-radius:4px;font-weight:700;flex-shrink:0}
-.sp-rating.HOT{background:rgba(198,106,58,.22);color:#e6936a;border:1px solid rgba(198,106,58,.34)}
-.sp-rating.GOOD{background:rgba(138,165,58,.18);color:#b8d250;border:1px solid rgba(138,165,58,.28)}
-.sp-rating.FAIR{background:rgba(230,180,80,.14);color:#e6b450;border:1px solid rgba(230,180,80,.22)}
-.sp-desc{font-family:'Crimson Pro',serif;font-size:.95rem;color:var(--text-secondary);line-height:1.5;margin:8px 0}
-.sp-game{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-.sp-game-pill{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1px;padding:2px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary)}
-.sp-tip{font-family:'Crimson Pro',serif;font-size:.88rem;color:var(--text);font-style:italic;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
-.sp-meta{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:1px;color:var(--text-muted);margin-top:8px;display:flex;flex-wrap:wrap;gap:10px}
-.sp-meta-item::before{content:'·';margin-right:6px}
-.sp-meta-item:first-child::before{content:''}
-.spots-intro{font-family:'Crimson Pro',serif;font-size:1rem;color:var(--text-secondary);font-style:italic;margin-bottom:18px;line-height:1.6}
+/* ── Compact conditions row ── */
+.cond{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
+.cd{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.cd-lbl{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:2px;color:var(--text3);margin-bottom:4px}
+.cd-val{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;color:var(--text);letter-spacing:1px}
+.cd-unit{font-size:.75rem;color:var(--text3);margin-left:2px}
+.cd-sub{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);margin-top:3px;letter-spacing:.5px}
+.cd-sub.up{color:var(--good)}
+.cd-sub.down{color:var(--rust)}
 
-/* ── Insight box ── */
-.insight-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 24px;margin-bottom:28px}
-.insight-text{font-family:'Crimson Pro',serif;font-size:1.05rem;color:var(--text-secondary);line-height:1.6;font-style:italic}
+/* ── Spots (minimal, expandable) ── */
+.spots-toggle{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:2px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:999px;padding:6px 14px;cursor:pointer;margin:18px 0}
+.spots-toggle:hover{border-color:var(--gold);color:var(--gold)}
+.spots-list{display:none;margin-top:8px}
+.spots-list.show{display:block}
+.spot-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-family:'JetBrains Mono',monospace;font-size:.7rem}
+.spot-name{color:var(--text)}
+.spot-dist{color:var(--text3);font-size:.6rem}
 
-/* ── Footer ── */
-footer{padding:30px 20px;text-align:center;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:2px;color:var(--text-muted)}
+footer{padding:24px 20px;text-align:center;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:2px;color:var(--text3)}
 
 @media (max-width:600px){
-  .verdict{flex-direction:column;gap:18px;text-align:center}
-  .v-left{flex-direction:column}
-  .v-score{text-align:center}
+  .week{grid-template-columns:repeat(7,1fr);gap:4px}
+  .dc{padding:8px 4px}
+  .dc-num{font-size:1.4rem}
+  .bignum{flex-direction:column;align-items:flex-start;gap:14px}
+  .bn-meta{text-align:left}
   .top-bar{padding:12px 16px}
 }
 </style>
@@ -203,242 +142,76 @@ footer{padding:30px 20px;text-align:center;border-top:1px solid var(--border);fo
 <body>
 
 <div class="top-bar">
-  <div class="logo">HUNT<span>REPORT</span></div>
-  <div class="tag-pill">FIELD INTELLIGENCE</div>
+  <div class="logo">HUNT<span style="color:#fff">REPORT</span></div>
+  <div class="tag">WHITETAIL</div>
 </div>
 
 <section class="hero">
   <h1 class="headline">HUNT<span>REPORT</span></h1>
-  <p class="tagline">Weather, wind, moon, and game movement — for any spot in North America.</p>
+  <div class="sub">WHITETAIL MOVEMENT · NEXT 7 DAYS</div>
   <div class="search-wrap">
-    <input id="locInput" class="s-input" type="text" placeholder="City, state, WMA, or national forest…" autocomplete="off">
-    <button id="searchBtn" class="s-btn">SCOUT IT</button>
+    <input id="locInput" class="s-input" type="text" placeholder="City, state, or hunting area…" autocomplete="off">
+    <button id="searchBtn" class="s-btn">SCOUT</button>
   </div>
   <button id="gpsBtn" class="gps-btn">USE MY LOCATION</button>
-  <div id="dayPicker" class="day-picker"></div>
   <div id="errBox" class="err"></div>
 </section>
 
 <div id="loader" class="loader">
-  <div class="deer-anim">🦌</div>
-  <div class="load-txt" id="loadTxt">SCOUTING THE GROUND…</div>
+  <div class="loader-bar"></div>
+  <div class="load-txt">SCORING…</div>
 </div>
 
 <main id="rpt">
   <div class="r-head">
     <div>
       <div class="r-name" id="rName"></div>
-      <div class="r-meta" id="rMeta"></div>
+      <div class="r-coords" id="rCoords"></div>
     </div>
-    <div class="r-ts" id="rTs"></div>
+    <div id="rPhase"></div>
   </div>
 
-  <div id="fcBanner" class="fc-banner"></div>
+  <div class="bignum" id="bignum"></div>
 
-  <div class="verdict" id="verdict"></div>
+  <h2 class="sec">WEEK · TAP TO COMPARE</h2>
+  <div class="week" id="week"></div>
 
-  <div class="insight-box"><div class="insight-text" id="insightText"></div></div>
-
-  <h2 class="sec">FIELD CONDITIONS</h2>
-  <div class="card-grid" id="wxGrid"></div>
-
-  <h2 class="sec">WIND &amp; MOON</h2>
-  <div class="detail-box">
-    <div class="detail-grid" id="windMoonGrid"></div>
-  </div>
-
-  <h2 class="sec">GAME ACTIVITY</h2>
-  <div class="game-grid" id="gameGrid"></div>
-
-  <h2 class="sec">HOURLY HUNT FORECAST</h2>
+  <h2 class="sec" id="hourlySec">HOURLY MOVEMENT %</h2>
   <div class="hourly-box">
-    <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;color:var(--text-muted)" id="hourlySubtitle">SCORE BY HOUR · HOVER FOR DETAIL</div>
     <div class="hourly-grid" id="hourlyGrid"></div>
     <div class="hh-axis" id="hourlyAxis"></div>
-    <div class="hourly-legend">
-      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#f0d878,#e6b450)"></span>PRIME 80+</span>
-      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#b8d250,#8aa53a)"></span>GOOD 65–79</span>
-      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#b08d57,#8a6f3a)"></span>FAIR 45–64</span>
-      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#7a6230,#4a3a1a)"></span>SLOW 30–44</span>
-      <span class="hl-item"><span class="hl-dot" style="background:linear-gradient(180deg,#3a3525,#252010)"></span>POOR &lt;30</span>
-      <span class="hl-item"><span class="hl-dot" style="background:rgba(230,180,80,.55);width:2px"></span>SUNRISE</span>
-      <span class="hl-item"><span class="hl-dot" style="background:rgba(198,106,58,.55);width:2px"></span>SUNSET</span>
+    <div class="legend">
+      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#f0d878,#e6b450)"></span>80–100%</span>
+      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#b8d250,#8aa53a)"></span>65–79%</span>
+      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#b08d57,#8a6f3a)"></span>45–64%</span>
+      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#5a5230,#3a3525)"></span>30–44%</span>
+      <span class="lg-item"><span class="lg-dot" style="background:linear-gradient(180deg,#3a3525,#252010)"></span>&lt;30%</span>
+      <span class="lg-item"><span class="lg-dot" style="background:rgba(230,180,80,.55);width:2px"></span>SUNRISE</span>
+      <span class="lg-item"><span class="lg-dot" style="background:rgba(198,106,58,.55);width:2px"></span>SUNSET</span>
     </div>
   </div>
-  <div class="windows-row" id="windowsRow"></div>
 
-  <div class="spots-section">
-    <h2 class="sec" id="spotsSec">PUBLIC HUNTING LANDS</h2>
-    <div class="spots-intro" id="spotsIntro"></div>
-    <div class="tab-row" id="spotTabs"></div>
-    <div class="spot-cards" id="spotCards"></div>
-  </div>
+  <h2 class="sec">CONDITIONS</h2>
+  <div class="cond" id="cond"></div>
+
+  <button class="spots-toggle" onclick="document.getElementById('spotsList').classList.toggle('show')">NEARBY PUBLIC LAND ▾</button>
+  <div class="spots-list" id="spotsList"></div>
 </main>
 
-<footer>
-  HUNTREPORT · DATA: OPEN-METEO, NOMINATIM, OPENSTREETMAP, USGS · ALWAYS VERIFY SEASONS &amp; REGULATIONS
-</footer>
+<footer>HUNTREPORT · OPEN-METEO · NOMINATIM · OPENSTREETMAP · USGS</footer>
 
 <script>
 const $ = id => document.getElementById(id);
-let _lastLat=null,_lastLon=null,_lastName='',_lastDayIdx=0,_lastWeather=null;
+let _last = { lat:null, lon:null, name:'', dayIdx:0, data:null };
 
-function showLoader(on,msg){
+function showLoader(on){
   $('loader').style.display = on ? 'flex' : 'none';
   $('rpt').style.display    = on ? 'none' : ($('rpt').dataset.hasReport==='1' ? 'block' : 'none');
-  if (msg) $('loadTxt').textContent = msg;
 }
 function showErr(m){ const e=$('errBox'); e.textContent=m; e.style.display='block'; }
 function hideErr(){ $('errBox').style.display='none'; }
 
-async function geocode(q){
-  const res = await fetch('/api/geocode?q=' + encodeURIComponent(q));
-  if(!res.ok) throw new Error('geocode http '+res.status);
-  return res.json();
-}
-
-async function fetchReport(lat,lon,name,dayIdx){
-  const u = `/api/report?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name||'')}&day_index=${dayIdx||0}`;
-  const res = await fetch(u);
-  if(!res.ok) throw new Error('report http '+res.status);
-  return res.json();
-}
-
-function fmt(n,d=0){ if(n===null||n===undefined||Number.isNaN(n)) return '—'; return Number(n).toFixed(d); }
-
-const WX_ICON = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',77:'❄️',80:'🌧️',81:'🌧️',82:'⛈️',85:'🌨️',86:'🌨️',95:'⛈️',96:'⛈️',99:'⛈️'};
-
-function buildDayPicker(daily){
-  const el = $('dayPicker');
-  el.innerHTML = '';
-  el.style.display = 'flex';
-  const times = daily.time || [];
-  const today = new Date();
-  for (let i=0;i<Math.min(7,times.length);i++){
-    const d = new Date(times[i] + 'T00:00');
-    const lbl = i===0 ? 'TODAY' : d.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
-    const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}).toUpperCase();
-    const wc = (daily.weather_code||[])[i];
-    const ic = WX_ICON[wc] || '🌤️';
-    const hi = Math.round((daily.temperature_2m_max||[])[i] ?? NaN);
-    const lo = Math.round((daily.temperature_2m_min||[])[i] ?? NaN);
-    const cell = document.createElement('div');
-    cell.className = 'dp' + (i===_lastDayIdx?' active':'');
-    cell.innerHTML = `<div class="dp-day">${lbl}</div><div class="dp-date">${ds}</div><div class="dp-icon">${ic}</div><div class="dp-hilo">${hi}° / ${lo}°</div>`;
-    cell.onclick = () => selectDay(i);
-    el.appendChild(cell);
-  }
-}
-
-async function selectDay(idx){
-  _lastDayIdx = idx;
-  document.querySelectorAll('.dp').forEach((el,i)=>el.classList.toggle('active', i===idx));
-  if(_lastLat!=null) await renderReport(_lastLat,_lastLon,_lastName,idx);
-}
-
-function renderVerdict(ai){
-  const score = ai.score || 0;
-  const icon = score>=80?'🏔️':score>=65?'🦌':score>=45?'🌤️':'⛈️';
-  $('verdict').innerHTML = `
-    <div class="v-left">
-      <div class="v-icon">${icon}</div>
-      <div>
-        <div class="v-label">${ai.verdict}</div>
-        <div class="v-desc">${ai.insight || ''}</div>
-      </div>
-    </div>
-    <div class="v-score">
-      <div class="v-num">${score}</div>
-      <div class="v-lbl">HUNT INDEX / 100</div>
-    </div>`;
-  $('insightText').textContent = ai.insight || '';
-}
-
-function renderConditions(weather, analysis){
-  const cur = weather.current || {};
-  const daily = weather.daily || {};
-  const idx = _lastDayIdx;
-  const tHi = (daily.temperature_2m_max||[])[idx];
-  const tLo = (daily.temperature_2m_min||[])[idx];
-  const isToday = idx===0;
-  const temp = isToday ? cur.temperature_2m : ((tHi+tLo)/2);
-  const wind = isToday ? cur.wind_speed_10m : (daily.wind_speed_10m_max||[])[idx];
-  const press = cur.pressure_msl;
-  const hum = cur.relative_humidity_2m;
-  const cloud = cur.cloud_cover;
-  const precip = (daily.precipitation_sum||[])[idx];
-  const elev = analysis.elevationFt;
-  const zone = analysis.zone;
-
-  const cards = [
-    {lbl:'TEMPERATURE', val:fmt(temp,0), unit:'°F', sub:isToday?`feels ${fmt(cur.apparent_temperature,0)}°`:`hi ${fmt(tHi,0)}° · lo ${fmt(tLo,0)}°`},
-    {lbl:'WIND', val:fmt(wind,0), unit:' mph', sub: cur.wind_gusts_10m && isToday ? `gusts ${fmt(cur.wind_gusts_10m,0)} mph` : ''},
-    {lbl:'PRESSURE', val:press?fmt(press,0):'—', unit:press?' hPa':'', sub:press?(press>=1020?'high & stable':press<1005?'falling':'normal'):''},
-    {lbl:'HUMIDITY', val:hum!=null?fmt(hum,0):'—', unit:hum!=null?'%':'', sub:''},
-    {lbl:'CLOUDS', val:cloud!=null?fmt(cloud,0):'—', unit:cloud!=null?'%':'', sub: cloud!=null && cloud>70?'overcast':cloud<30?'clear':'partly cloudy'},
-    {lbl:'PRECIP', val:precip!=null?fmt(precip,2):'—', unit:precip!=null?'"':'', sub: (daily.precipitation_probability_max||[])[idx]!=null?`${(daily.precipitation_probability_max||[])[idx]}% chance`:''},
-    {lbl:'ELEVATION', val: elev?fmt(elev,0):'—', unit: elev?' ft':'', sub: zone||''},
-  ];
-  $('wxGrid').innerHTML = cards.map(c=>`
-    <div class="card">
-      <div class="c-lbl">${c.lbl}</div>
-      <div class="c-val">${c.val}<span class="c-unit">${c.unit}</span></div>
-      ${c.sub?`<div class="c-sub">${c.sub}</div>`:''}
-    </div>`).join('');
-}
-
-function renderWindMoon(ai){
-  const w = ai.wind || {};
-  const m = ai.moon || {};
-  const dir = w.directionDeg ?? null;
-  const arrow = dir!=null ? `transform: translate(-50%,-100%) rotate(${dir}deg)` : '';
-  const html = `
-    <div class="dc">
-      <div class="dc-lbl">WIND</div>
-      <div class="compass">
-        <div class="compass-rose">
-          <div class="compass-n">N</div>
-          <div class="compass-arrow" style="${arrow}"></div>
-        </div>
-        <div>
-          <div class="dc-val">${w.speedMph!=null?w.speedMph:'—'}<span class="dc-unit"> mph ${w.compass||''}</span></div>
-          <div class="dc-sub" style="margin-top:4px"><strong style="color:var(--accent)">${w.rating||'—'}</strong></div>
-        </div>
-      </div>
-      <div class="dc-sub">${w.note||''}</div>
-    </div>
-    <div class="dc">
-      <div class="dc-lbl">MOON</div>
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="font-size:2.6rem">${m.icon||'🌑'}</div>
-        <div>
-          <div class="dc-val">${m.label||'—'}</div>
-          <div class="dc-sub" style="margin-top:4px">${m.illumination!=null?Math.round(m.illumination*100)+'% illuminated':''} · <strong style="color:var(--accent)">${m.rating||''}</strong></div>
-        </div>
-      </div>
-      <div class="dc-sub">${m.note||''}</div>
-    </div>`;
-  $('windMoonGrid').innerHTML = html;
-}
-
-function catLabel(c){
-  return ({big_game:'BIG GAME', upland:'UPLAND', waterfowl:'WATERFOWL', small_game:'SMALL GAME', predator:'PREDATOR', varmint:'VARMINT'})[c] || (c||'').replace('_',' ').toUpperCase();
-}
-
-function renderGame(game){
-  $('gameGrid').innerHTML = (game||[]).map(g => `
-    <div class="game-card${g.rut?' rut':''}">
-      <div class="gc-head">
-        <div>
-          <div class="gc-name">${g.name}</div>
-          <div class="gc-cat">${catLabel(g.category)}</div>
-        </div>
-        <div class="gc-badge ${g.activity}">${g.activity}</div>
-      </div>
-      ${g.rut?'<div class="rut-flag">RUT ACTIVITY</div>':''}
-      <div class="gc-tip">${g.tip}</div>
-    </div>`).join('');
-}
+const WX = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'❄️',80:'🌧',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
 
 function scoreClass(s){
   if(s>=80) return 's5';
@@ -447,173 +220,210 @@ function scoreClass(s){
   if(s>=30) return 's2';
   return 's1';
 }
-
-function renderHourlyChart(hourly, sunriseHour, sunsetHour, isToday){
-  const grid = $('hourlyGrid');
-  const axis = $('hourlyAxis');
-  if(!hourly || !hourly.length){ grid.innerHTML=''; axis.innerHTML=''; return; }
-  const nowHour = new Date().getHours();
-  grid.innerHTML = hourly.map(h => {
-    const heightPct = Math.max(6, h.score);
-    const hourLabel = h.hour===0?'12 AM':h.hour<12?(h.hour+' AM'):h.hour===12?'12 PM':((h.hour-12)+' PM');
-    const tip = `${hourLabel} · ${h.score}/100${h.factors&&h.factors.length?' · '+h.factors.slice(0,2).join(', '):''}${h.tempF!=null?' · '+Math.round(h.tempF)+'°F':''}${h.windMph!=null?' · '+Math.round(h.windMph)+' mph wind':''}${h.pressureD24!=null?' · ΔP '+(h.pressureD24>0?'+':'')+h.pressureD24+' hPa/24h':''}`;
-    const isNow = isToday && h.hour===nowHour;
-    return `<div class="hh${isNow?' now':''}" title="${tip.replace(/"/g,'&quot;')}">
-      <div class="hh-bar ${scoreClass(h.score)}" style="height:${heightPct}%;width:100%"></div>
-      <div class="hh-tip">${tip}</div>
-    </div>`;
-  }).join('');
-  // Sunrise/sunset vertical lines
-  if(sunriseHour!=null){
-    const left = (sunriseHour/24)*100;
-    grid.insertAdjacentHTML('beforeend', `<div class="solar-line" style="left:${left}%" data-label="↑ ${formatHourDecimal(sunriseHour)}"></div>`);
-  }
-  if(sunsetHour!=null){
-    const left = (sunsetHour/24)*100;
-    grid.insertAdjacentHTML('beforeend', `<div class="solar-line sunset" style="left:${left}%" data-label="↓ ${formatHourDecimal(sunsetHour)}"></div>`);
-  }
-  // Hour axis: label every 3rd hour
-  axis.innerHTML = hourly.map(h => {
-    const lab = h.hour%3===0 ? (h.hour===0?'12a':h.hour===12?'12p':h.hour<12?h.hour+'a':(h.hour-12)+'p') : '';
-    return `<div class="${h.hour%6===0?'major':''}">${lab}</div>`;
-  }).join('');
+function fmtHour(h){
+  if(h===0) return '12 AM';
+  if(h<12) return h+' AM';
+  if(h===12) return '12 PM';
+  return (h-12)+' PM';
 }
-
-function formatHourDecimal(h){
-  const hr = Math.floor(h);
-  const mn = Math.round((h-hr)*60);
-  const ampm = hr>=12?'PM':'AM';
-  const dh = hr%12 || 12;
+function fmtHourDecimal(h){
+  const hr = Math.floor(h), mn = Math.round((h-hr)*60);
+  const ampm = hr>=12?'PM':'AM', dh = hr%12 || 12;
   return `${dh}:${String(mn).padStart(2,'0')} ${ampm}`;
 }
 
-function renderBestWindows(windows){
-  if(!windows || !windows.length){ $('windowsRow').innerHTML=''; return; }
-  $('windowsRow').innerHTML = windows.map((w,i) => `
-    <div class="w-cell${i===0?' primary':''}">
-      <div class="w-range">${w.rangeLabel}</div>
-      <div class="w-peak">PEAK ${w.peakScore}/100</div>
-      <div class="w-why">${w.why}</div>
-    </div>`).join('');
+async function geocode(q){
+  const r = await fetch('/api/geocode?q=' + encodeURIComponent(q));
+  if(!r.ok) throw new Error('geocode http '+r.status);
+  return r.json();
+}
+async function fetchReport(lat, lon, name, dayIdx){
+  const r = await fetch(`/api/report?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name||'')}&day_index=${dayIdx||0}`);
+  if(!r.ok) throw new Error('report http '+r.status);
+  return r.json();
 }
 
-let _spotsData = null;
-let _activeTab = 'forests';
-
-function renderSpots(spots){
-  _spotsData = spots || {};
-  $('spotsIntro').textContent = _spotsData.intro || '';
-  const tabs = [
-    {key:'forests', label:'FORESTS'},
-    {key:'wmas',    label:'WMAs / GAME LANDS'},
-    {key:'refuges', label:'REFUGES'},
-  ].filter(t => (_spotsData[t.key]||[]).length>0);
-  if(!tabs.length){
-    $('spotTabs').innerHTML = '';
-    $('spotCards').innerHTML = '<div style="color:var(--text-muted);font-family:JetBrains Mono,monospace;font-size:.7rem;letter-spacing:1px">NO PUBLIC LAND DATA FOR THIS AREA</div>';
-    return;
-  }
-  if(!tabs.find(t=>t.key===_activeTab)) _activeTab = tabs[0].key;
-  $('spotTabs').innerHTML = tabs.map(t =>
-    `<div class="tab${t.key===_activeTab?' active':''}" onclick="switchSpotTab('${t.key}')">${t.label} (${(_spotsData[t.key]||[]).length})</div>`
-  ).join('');
-  renderSpotCards();
+function renderHeader(d){
+  $('rName').textContent = (_last.name || 'YOUR LOCATION').toUpperCase();
+  $('rCoords').textContent = `${_last.lat.toFixed(4)}°N  ${Math.abs(_last.lon).toFixed(4)}°${_last.lon<0?'W':'E'}${d.zone?'  ·  '+d.zone:''}${d.elevationFt?'  ·  '+Math.round(d.elevationFt)+' ft':''}`;
+  const ph = d.phase || {};
+  if(ph.label){
+    $('rPhase').innerHTML = `<span class="phase-pill ${ph.phase||''}">${ph.label}${typeof ph.daysFromPeak==='number'?` · D${ph.daysFromPeak>=0?'+':''}${ph.daysFromPeak}`:''}</span>`;
+  } else $('rPhase').innerHTML = '';
 }
-window.switchSpotTab = (k) => { _activeTab=k; renderSpots(_spotsData); };
 
-function renderSpotCards(){
-  const list = _spotsData[_activeTab] || [];
-  $('spotCards').innerHTML = list.map(s => {
-    const game = (s.game||[]).map(g => `<span class="sp-game-pill">${g}</span>`).join('');
-    const meta = [s.access, s.size].filter(Boolean).map(x => `<span class="sp-meta-item">${x}</span>`).join('');
-    return `
-      <div class="spot-card${s.featured?' featured':''}">
-        <div class="sp-head">
-          <div>
-            <div class="sp-name">${s.name}</div>
-            <div class="sp-dist">${s.distance||''}</div>
-          </div>
-          <div class="sp-rating ${s.rating||'GOOD'}">${s.rating||'GOOD'}</div>
-        </div>
-        <div class="sp-desc">${s.description||''}</div>
-        ${game?`<div class="sp-game">${game}</div>`:''}
-        ${s.tip?`<div class="sp-tip">${s.tip}</div>`:''}
-        ${meta?`<div class="sp-meta">${meta}</div>`:''}
-      </div>`;
+function renderBigNum(d){
+  const score = d.score || 0;
+  const cls = scoreClass(score);
+  const peakLabel = fmtHour(d.peakHour||0);
+  const factors = (d.peakFactors||[]).slice(0,3).join(' · ').toUpperCase() || 'CHECK CONDITIONS';
+  const moonIcon = (d.moon && d.moon.icon) || '';
+  const moonLabel = (d.moon && d.moon.label) || '';
+  const moonPct = d.moon && d.moon.illumination!=null ? Math.round(d.moon.illumination*100)+'%' : '';
+  $('bignum').innerHTML = `
+    <div>
+      <div><span class="bn-num ${cls}">${score}</span><span class="bn-suffix">%</span></div>
+      <div class="bn-row" style="margin-top:6px">PEAK · <strong>${peakLabel}</strong></div>
+    </div>
+    <div class="bn-meta">
+      <div class="bn-row">DAY AVG · <strong>${d.avgScore||0}%</strong></div>
+      <div class="bn-row">DRIVERS · <strong>${factors}</strong></div>
+      <div class="bn-row">${moonIcon} ${moonLabel} <strong>${moonPct}</strong></div>
+    </div>`;
+}
+
+function renderWeek(d){
+  const week = d.weeklyForecast || [];
+  const best = d.bestDayIndex;
+  $('week').innerHTML = week.map((day,i) => {
+    const date = new Date(day.date + 'T00:00');
+    const dn = i===0 ? 'TODAY' : date.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
+    const wc = WX[day.weatherCode] || '';
+    const cls = scoreClass(day.peakScore);
+    const tHi = day.tempMaxF!=null ? Math.round(day.tempMaxF) : '—';
+    const tLo = day.tempMinF!=null ? Math.round(day.tempMinF) : '—';
+    return `<div class="dc${i===_last.dayIdx?' active':''}${i===best?' best':''}" onclick="selectDay(${i})">
+      <div class="dc-day">${dn}</div>
+      <div class="dc-num ${cls}">${day.peakScore}</div>
+      <div class="dc-pct">PEAK ${fmtHour(day.peakHour)}</div>
+      <div class="dc-icon">${wc}</div>
+      <div class="dc-tlo">${tHi}° / ${tLo}°</div>
+    </div>`;
   }).join('');
 }
 
-async function renderReport(lat,lon,name,dayIdx){
-  showLoader(true,'BUILDING THE HUNT REPORT…');
-  hideErr();
+function renderHourly(d, isToday){
+  const grid = $('hourlyGrid');
+  const axis = $('hourlyAxis');
+  const hourly = d.hourly || [];
+  if(!hourly.length){ grid.innerHTML=''; axis.innerHTML=''; return; }
+  const peak = hourly.reduce((a,b)=>a.score>b.score?a:b);
+  const nowHour = new Date().getHours();
+  grid.innerHTML = hourly.map(h => {
+    const heightPct = Math.max(5, h.score);
+    const tipRows = [
+      `${fmtHour(h.hour)} · ${h.score}%`,
+      h.factors && h.factors.length ? h.factors.join(' · ') : '',
+      h.tempF!=null ? `${Math.round(h.tempF)}°F · ${h.windMph!=null?Math.round(h.windMph)+' mph '+(h.windCompass||''):''}` : '',
+      h.pressureD24!=null ? `ΔP ${h.pressureD24>0?'+':''}${h.pressureD24} hPa/24h` : '',
+    ].filter(Boolean);
+    const tip = tipRows.map(r => `<div class="hh-tip-row">${r}</div>`).join('');
+    const isNow = isToday && h.hour===nowHour;
+    const isPeak = h.hour===peak.hour;
+    return `<div class="hh${isNow?' now':''}${isPeak?' peak':''}">
+      <div class="hh-bar ${scoreClass(h.score)}" style="height:${heightPct}%"></div>
+      <div class="hh-pct">${h.score}%</div>
+      <div class="hh-tip">${tip}</div>
+    </div>`;
+  }).join('');
+  if(d.sunriseHour!=null){
+    grid.insertAdjacentHTML('beforeend',
+      `<div class="solar-line" style="left:${(d.sunriseHour/24)*100}%" data-label="↑ ${fmtHourDecimal(d.sunriseHour)}"></div>`);
+  }
+  if(d.sunsetHour!=null){
+    grid.insertAdjacentHTML('beforeend',
+      `<div class="solar-line sunset" style="left:${(d.sunsetHour/24)*100}%" data-label="↓ ${fmtHourDecimal(d.sunsetHour)}"></div>`);
+  }
+  axis.innerHTML = hourly.map(h => `<div>${h.hour%3===0?(h.hour===0?'12a':h.hour===12?'12p':h.hour<12?h.hour+'a':(h.hour-12)+'p'):''}</div>`).join('');
+
+  const dateStr = d.dayLabel ? new Date(d.dayLabel + 'T00:00').toLocaleDateString('en-US',{weekday:'long', month:'short', day:'numeric'}).toUpperCase() : '';
+  $('hourlySec').textContent = `HOURLY MOVEMENT % · ${dateStr}`;
+}
+
+function renderConditions(d){
+  const w = d.wind || {};
+  const peakHour = (d.hourly||[]).find(h => h.hour === d.peakHour) || {};
+  const press = peakHour.pressureHpa, d24 = peakHour.pressureD24;
+  let pressureSub = '';
+  if(d24!=null){
+    if(d24 >= 2)      pressureSub = `<span class="cd-sub up">↑ +${d24} / 24h</span>`;
+    else if(d24<=-2)  pressureSub = `<span class="cd-sub down">↓ ${d24} / 24h</span>`;
+    else              pressureSub = `<span class="cd-sub">≈ stable</span>`;
+  }
+  const cards = [
+    {lbl:'TEMP @ PEAK', val: peakHour.tempF!=null?Math.round(peakHour.tempF):'—', unit:'°F'},
+    {lbl:'WIND @ PEAK', val: w.speedMph!=null?Math.round(w.speedMph):'—', unit:' mph', sub: w.compass?`<span class="cd-sub">${w.compass}</span>`:''},
+    {lbl:'PRESSURE',    val: press!=null?Math.round(press):'—', unit:' hPa', sub: pressureSub},
+    {lbl:'MOON',        val: d.moon && d.moon.illumination!=null?Math.round(d.moon.illumination*100):'—', unit:'%', sub: d.moon&&d.moon.label?`<span class="cd-sub">${d.moon.label}</span>`:''},
+    {lbl:'ELEVATION',   val: d.elevationFt?Math.round(d.elevationFt):'—', unit:' ft', sub: d.zone?`<span class="cd-sub">${d.zone}</span>`:''},
+  ];
+  $('cond').innerHTML = cards.map(c => `
+    <div class="cd">
+      <div class="cd-lbl">${c.lbl}</div>
+      <div class="cd-val">${c.val}<span class="cd-unit">${c.unit}</span></div>
+      ${c.sub||''}
+    </div>`).join('');
+}
+
+function renderSpots(spots){
+  const all = [...(spots.forests||[]), ...(spots.wmas||[]), ...(spots.refuges||[])];
+  if(!all.length){ $('spotsList').innerHTML = '<div style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:.65rem;letter-spacing:1px;padding:10px">NO PUBLIC LAND DATA FOR THIS AREA</div>'; return; }
+  $('spotsList').innerHTML = all.slice(0,12).map(s => `
+    <div class="spot-row">
+      <span class="spot-name">${s.name}</span>
+      <span class="spot-dist">${s.distance||''}</span>
+    </div>`).join('');
+}
+
+async function selectDay(idx){
+  _last.dayIdx = idx;
+  document.querySelectorAll('.dc').forEach((el,i)=>el.classList.toggle('active', i===idx));
+  if(_last.lat == null) return;
+  await renderReport(idx);
+}
+window.selectDay = selectDay;
+
+async function renderReport(dayIdx){
+  showLoader(true); hideErr();
   try{
-    const data = await fetchReport(lat,lon,name,dayIdx);
-    const ai = data.ai || data.analysis;
-    _lastWeather = data.weather;
-    if(_lastWeather && _lastWeather.daily) buildDayPicker(_lastWeather.daily);
-    const now = new Date();
-    $('rName').textContent = (name||'YOUR LOCATION').toUpperCase();
-    $('rMeta').textContent = `${lat.toFixed(4)}°N  ${Math.abs(lon).toFixed(4)}°${lon<0?'W':'E'}  ·  ${(ai.season||'').toUpperCase()}${data.analysis.zone?'  ·  '+data.analysis.zone:''}`;
-    $('rTs').innerHTML = (dayIdx===0 ? 'REPORT GENERATED' : 'FORECAST FOR') + '<br>' +
-      now.toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric'}) +
-      (dayIdx===0 ? ' at '+now.toLocaleString('en-US',{hour:'2-digit',minute:'2-digit'}) : '');
-    const banner = $('fcBanner');
-    if(dayIdx>0){ banner.classList.add('show'); banner.textContent = `7-DAY FORECAST · DAY +${dayIdx} · ${data.analysis.dayLabel||''}`; }
-    else banner.classList.remove('show');
-
-    renderVerdict(ai);
-    renderConditions(data.weather, data.analysis);
-    renderWindMoon(ai);
-    renderGame(ai.game);
-    renderHourlyChart(ai.hourly, ai.sunriseHour, ai.sunsetHour, dayIdx===0);
-    renderBestWindows(ai.bestWindows);
-    renderSpots(ai.publicLands || data.spots);
-
-    $('rpt').style.display = 'block';
-    $('rpt').dataset.hasReport = '1';
+    const d = await fetchReport(_last.lat, _last.lon, _last.name, dayIdx);
+    _last.data = d;
+    renderHeader(d);
+    renderBigNum(d);
+    renderWeek(d);
+    renderHourly(d, dayIdx===0);
+    renderConditions(d);
+    renderSpots(d.spots||{});
+    $('rpt').style.display='block';
+    $('rpt').dataset.hasReport='1';
     if(dayIdx===0) $('rpt').scrollIntoView({behavior:'smooth',block:'start'});
   } catch(e){
     console.error(e);
-    showErr('Could not build report — ' + e.message);
+    showErr('Could not build report — '+e.message);
   } finally {
     showLoader(false);
   }
 }
 
-async function runSearch(query){
+async function runSearch(q){
   hideErr();
-  showLoader(true,'LOOKING UP THE GROUND…');
+  showLoader(true);
   try{
-    const loc = await geocode(query);
+    const loc = await geocode(q);
     if(loc.error || loc.lat==null){ showErr(loc.error||'Could not find that location'); showLoader(false); return; }
-    _lastLat = loc.lat; _lastLon = loc.lon; _lastName = loc.name || query; _lastDayIdx = 0;
-    await renderReport(_lastLat,_lastLon,_lastName,0);
+    _last.lat = loc.lat;
+    _last.lon = loc.lon;
+    _last.name = loc.name || q;
+    _last.dayIdx = 0;
+    await renderReport(0);
   } catch(e){
-    console.error(e);
-    showErr('Search failed — ' + e.message);
+    showErr('Search failed — '+e.message);
     showLoader(false);
   }
 }
 
-$('searchBtn').onclick = () => {
-  const q = $('locInput').value.trim();
-  if(q) runSearch(q);
-};
+$('searchBtn').onclick = () => { const q=$('locInput').value.trim(); if(q) runSearch(q); };
 $('locInput').addEventListener('keydown', e => { if(e.key==='Enter') $('searchBtn').click(); });
-
 $('gpsBtn').onclick = () => {
   if(!navigator.geolocation){ showErr('Geolocation not supported'); return; }
-  showLoader(true,'GETTING YOUR LOCATION…');
+  showLoader(true);
   navigator.geolocation.getCurrentPosition(async pos => {
-    _lastLat = pos.coords.latitude;
-    _lastLon = pos.coords.longitude;
-    _lastName = `${_lastLat.toFixed(3)}°N, ${Math.abs(_lastLon).toFixed(3)}°${_lastLon<0?'W':'E'}`;
-    _lastDayIdx = 0;
-    await renderReport(_lastLat,_lastLon,_lastName,0);
-  }, err => {
-    showErr('Location error: ' + err.message);
-    showLoader(false);
-  }, {timeout:10000});
+    _last.lat = pos.coords.latitude;
+    _last.lon = pos.coords.longitude;
+    _last.name = `${_last.lat.toFixed(3)}°N, ${Math.abs(_last.lon).toFixed(3)}°${_last.lon<0?'W':'E'}`;
+    _last.dayIdx = 0;
+    await renderReport(0);
+  }, err => { showErr('Location: '+err.message); showLoader(false); }, {timeout:10000});
 };
 </script>
 </body>

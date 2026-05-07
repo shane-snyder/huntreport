@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from fastapi import FastAPI, Query, HTTPException
@@ -32,16 +33,6 @@ async def geocode(q: str = Query(..., min_length=1)):
         raise HTTPException(status_code=502, detail=str(exc))
 
 
-@app.get("/api/weather")
-async def weather(lat: float = Query(...), lon: float = Query(...)):
-    return await fetch_weather(lat, lon)
-
-
-@app.get("/api/terrain")
-async def terrain(lat: float = Query(...), lon: float = Query(...)):
-    return await fetch_terrain_data(lat, lon)
-
-
 @app.get("/api/report")
 async def report(
     lat: float = Query(...),
@@ -49,31 +40,18 @@ async def report(
     name: str = Query(""),
     day_index: int = Query(0, ge=0, le=6),
 ):
-    log.info("Report request: lat=%.4f lon=%.4f name=%s day=%d", lat, lon, name, day_index)
+    log.info("Report: lat=%.4f lon=%.4f name=%s day=%d", lat, lon, name, day_index)
 
-    wx = await fetch_weather(lat, lon)
-    terrain_data = await fetch_terrain_data(lat, lon)
-    analysis = build_hunting_analysis(lat, lon, name, wx, terrain_data, day_index)
-    spots = await discover_spots(lat, lon, name)
+    wx, terrain, spots = await asyncio.gather(
+        fetch_weather(lat, lon),
+        fetch_terrain_data(lat, lon),
+        discover_spots(lat, lon, name),
+    )
+    analysis = build_hunting_analysis(lat, lon, name, wx, terrain, day_index)
 
     return {
-        "weather":  wx,
-        "terrain":  terrain_data,
-        "analysis": analysis,
-        "spots":    spots,
-        "ai": {
-            "score":       analysis["score"],
-            "verdict":     analysis["verdict"],
-            "insight":     analysis["insight"],
-            "game":        analysis["game"],
-            "hourly":      analysis["hourly"],
-            "bestWindows": analysis["bestWindows"],
-            "sunriseHour": analysis["sunriseHour"],
-            "sunsetHour":  analysis["sunsetHour"],
-            "moon":        analysis["moon"],
-            "wind":        analysis["wind"],
-            "publicLands": spots,
-        },
+        **analysis,
+        "spots": spots,
     }
 
 
