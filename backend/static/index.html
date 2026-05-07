@@ -83,24 +83,26 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .dc-icon{font-size:.95rem;margin-top:3px;line-height:1}
 
 /* ── Hourly chart ── */
-.hourly-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 22px;margin-bottom:18px;position:relative}
-.hourly-grid{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;align-items:end;height:170px;margin-top:8px;position:relative}
-.hh{position:relative;display:flex;align-items:flex-end;justify-content:center;border-radius:3px 3px 0 0;cursor:pointer;min-height:5px;background:var(--surface3)}
-.hh:hover{filter:brightness(1.4)}
-.hh.now{outline:2px solid var(--rust);outline-offset:1px;z-index:2}
-.hh-bar{width:100%;border-radius:3px 3px 0 0;position:relative}
+.hourly-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 22px 18px;margin-bottom:18px;position:relative}
+.hourly-grid{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;height:200px;margin-top:8px;position:relative;align-items:stretch}
+/* Each column is the full chart height; the bar sits at the bottom and grows up by score% */
+.hh{position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;border-radius:3px 3px 0 0;background:transparent}
+.hh::before{content:'';position:absolute;bottom:0;left:0;right:0;top:0;border-radius:3px 3px 0 0;background:rgba(255,255,255,.025);pointer-events:none}
+.hh:hover{filter:brightness(1.25)}
+.hh.now{outline:2px solid var(--rust);outline-offset:2px;z-index:3;border-radius:3px 3px 4px 4px}
+.hh-bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;position:relative;z-index:1;box-shadow:0 -1px 0 rgba(255,255,255,.05) inset}
 .hh-bar.s5{background:linear-gradient(180deg,#f0d878 0%,#e6b450 100%)}
 .hh-bar.s4{background:linear-gradient(180deg,#b8d250 0%,#8aa53a 100%)}
 .hh-bar.s3{background:linear-gradient(180deg,#b08d57 0%,#8a6f3a 100%)}
 .hh-bar.s2{background:linear-gradient(180deg,#5a5230 0%,#3a3525 100%)}
 .hh-bar.s1{background:linear-gradient(180deg,#3a3525 0%,#252010 100%)}
-.hh-pct{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text2);font-weight:700;letter-spacing:0;white-space:nowrap;display:none}
+.hh-pct{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.55rem;font-weight:700;letter-spacing:0;white-space:nowrap;color:var(--text2);display:none;z-index:4}
 .hh.peak .hh-pct{display:block;color:var(--gold)}
-.hh-axis{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text3);margin-top:5px;text-align:center}
-.solar-line{position:absolute;top:-6px;bottom:0;width:1px;background:rgba(230,180,80,.55);z-index:1;pointer-events:none}
+.hh-axis{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text3);margin-top:6px;text-align:center}
+.solar-line{position:absolute;top:0;bottom:0;width:1px;background:rgba(230,180,80,.55);z-index:2;pointer-events:none}
 .solar-line.sunset{background:rgba(198,106,58,.55)}
-.solar-line::after{content:attr(data-label);position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text3);white-space:nowrap}
-.hh-tip{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text);white-space:nowrap;display:none;z-index:5;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.solar-line::after{content:attr(data-label);position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text3);white-space:nowrap}
+.hh-tip{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text);white-space:nowrap;display:none;z-index:6;box-shadow:0 6px 16px rgba(0,0,0,.5);pointer-events:none}
 .hh-tip-row{margin:2px 0}
 .hh:hover .hh-tip{display:block}
 
