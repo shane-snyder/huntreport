@@ -427,17 +427,59 @@ async function runSearch(q){
 $('searchBtn').onclick = () => { const q=$('locInput').value.trim(); if(q) runSearch(q); };
 $('locInput').addEventListener('keydown', e => { if(e.key==='Enter') $('searchBtn').click(); });
 buildLegendScale();
-$('gpsBtn').onclick = () => {
-  if(!navigator.geolocation){ showErr('Geolocation not supported'); return; }
-  showLoader(true);
-  navigator.geolocation.getCurrentPosition(async pos => {
-    _last.lat = pos.coords.latitude;
-    _last.lon = pos.coords.longitude;
-    _last.name = `${_last.lat.toFixed(3)}°N, ${Math.abs(_last.lon).toFixed(3)}°${_last.lon<0?'W':'E'}`;
-    _last.dayIdx = 0;
-    await renderReport(0);
-  }, err => { showErr('Location: '+err.message); showLoader(false); }, {timeout:10000});
-};
+
+// Try the browser's geolocation. On success run the report; on failure
+// behave according to `silent` — auto-load suppresses errors so the user
+// just sees the search bar, the GPS button surfaces them.
+async function useGeolocation(silent){
+  if(!navigator.geolocation){
+    if(!silent) showErr('Geolocation not supported');
+    return false;
+  }
+  return new Promise(resolve => {
+    showLoader(true);
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        _last.lat = pos.coords.latitude;
+        _last.lon = pos.coords.longitude;
+        _last.dayIdx = 0;
+        // Friendly name via reverse geocode — non-blocking; fall back to coords if it fails.
+        _last.name = `${_last.lat.toFixed(3)}°N, ${Math.abs(_last.lon).toFixed(3)}°${_last.lon<0?'W':'E'}`;
+        try{
+          const r = await fetch(`/api/reverse-geocode?lat=${_last.lat}&lon=${_last.lon}`);
+          if(r.ok){
+            const j = await r.json();
+            if(j.name) _last.name = j.name;
+          }
+        } catch {}
+        await renderReport(0);
+        resolve(true);
+      },
+      err => {
+        if(!silent) showErr('Location: ' + err.message);
+        showLoader(false);
+        resolve(false);
+      },
+      { timeout: 10000, maximumAge: 600000 }
+    );
+  });
+}
+$('gpsBtn').onclick = () => useGeolocation(false);
+
+// Auto-load on first visit. Browser will prompt once; if denied or unavailable
+// we silently fall back to the search bar.
+window.addEventListener('load', () => {
+  if (_last.lat != null) return;
+  if (!navigator.geolocation) return;
+  // Skip auto-prompt if the user has previously denied it (Permissions API).
+  if (navigator.permissions && navigator.permissions.query){
+    navigator.permissions.query({name:'geolocation'}).then(p => {
+      if (p.state !== 'denied') useGeolocation(true);
+    }).catch(() => useGeolocation(true));
+  } else {
+    useGeolocation(true);
+  }
+});
 </script>
 </body>
 </html>

@@ -7,6 +7,38 @@ _PUBLIC_LAND_RE = re.compile(
 )
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
+
+
+async def reverse_geocode(lat: float, lon: float) -> dict:
+    """Resolve coordinates to a friendly place name via Nominatim reverse."""
+    headers = {"User-Agent": "HuntReport/1.0 (hunting-app)"}
+    params = {"lat": lat, "lon": lon, "format": "jsonv2", "addressdetails": 1, "zoom": 10}
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            resp = await client.get(NOMINATIM_REVERSE_URL, params=params, headers=headers)
+            if not resp.is_success:
+                return {"lat": lat, "lon": lon, "name": _fallback_label(lat, lon), "type": "unknown"}
+            r = resp.json()
+    except (httpx.HTTPError, ValueError):
+        return {"lat": lat, "lon": lon, "name": _fallback_label(lat, lon), "type": "unknown"}
+
+    addr = r.get("address", {}) or {}
+    city = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("hamlet") or addr.get("county", "")
+    state = addr.get("state", "")
+    state_code = (addr.get("ISO3166-2-lvl4") or "").split("-")[-1] or state
+    if city and state_code:
+        name = f"{city}, {state_code}"
+    elif city and state:
+        name = f"{city}, {state}"
+    else:
+        display = r.get("display_name", "")
+        name = display.split(",")[0] if display else _fallback_label(lat, lon)
+    return {"lat": lat, "lon": lon, "name": name, "displayName": r.get("display_name", ""), "type": "city"}
+
+
+def _fallback_label(lat: float, lon: float) -> str:
+    return f"{lat:.3f}°N, {abs(lon):.3f}°{'W' if lon < 0 else 'E'}"
 
 
 async def geocode_location(query: str) -> dict:

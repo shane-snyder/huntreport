@@ -49,7 +49,7 @@ async def fetch_weather(lat: float, lon: float) -> dict:
             "sunrise",
             "sunset",
         ]),
-        "past_hours": 48,
+        "past_hours": 72,
         "temperature_unit": "fahrenheit",
         "wind_speed_unit": "mph",
         "timezone": "auto",

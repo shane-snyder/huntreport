@@ -64,11 +64,15 @@ def whitetail_phase(d: date, lat: float) -> dict:
 def compute_hourly_score(
     hour: int,
     temp_f: float | None,
+    temp_delta_24h: float | None,
     wind_mph: float | None,
     cloud_pct: float | None,
     pressure: float | None,
     pressure_delta_24h: float | None,
+    pressure_delta_12h: float | None,
     pressure_delta_6h: float | None,
+    pressure_drop_pre: float | None,    # ΔP from (now-24h) to (now-12h) — the "before" leg of a front cycle
+    pressure_rise_post: float | None,   # ΔP from (now-12h) to now — the "after" leg of a front cycle
     precip_mm: float | None,
     moon_illum: float,
     is_daylight: bool,
@@ -80,8 +84,6 @@ def compute_hourly_score(
     factors: list[str] = []
 
     # ── Time of day ─────────────────────────────────────────────────
-    # Rut intensity flattens the diurnal curve: bucks cruise mid-day
-    # in peak rut, but in summer/early season they're nailed to dawn/dusk.
     if near_dawn:
         s += 22
         factors.append("dawn")
@@ -90,7 +92,6 @@ def compute_hourly_score(
         factors.append("dusk")
     elif is_daylight:
         if 11 <= hour <= 14:
-            # Mid-day penalty shrinks (and eventually flips positive) with rut intensity
             midday = -10 + int(15 * rut_intensity)
             s += midday
             if midday < 0:
@@ -100,18 +101,21 @@ def compute_hourly_score(
         else:
             s += 2
     else:
-        s -= 6  # full dark, outside legal light
+        s -= 6
 
-    # ── Temperature ──────────────────────────────────────────────────
-    # Whitetail movement peaks in cool weather. 25-50°F is the sweet spot.
+    # ── Temperature: absolute window + 24h change ───────────────────
+    # Per HuntWise pros: relative change matters more than absolute. Score
+    # absolute first (deer have a thermal preference), then layer the 24h
+    # trend on top so a 50°F day after 70°F yesterday outscores a 50°F day
+    # after 35°F yesterday.
     if temp_f is not None:
         if 25 <= temp_f <= 50:
-            s += 14
+            s += 12
             factors.append("cool temps")
         elif 50 < temp_f <= 60:
-            s += 6
+            s += 5
         elif 15 <= temp_f < 25:
-            s += 6
+            s += 5
             factors.append("cold push")
         elif temp_f < 5:
             s -= 12
@@ -120,7 +124,25 @@ def compute_hourly_score(
             s -= 12
             factors.append("warm hold")
         elif temp_f > 65:
-            s -= 4
+            s -= 3
+
+    if temp_delta_24h is not None:
+        if temp_delta_24h <= -15:
+            s += 10
+            factors.append("major cool-down")
+        elif temp_delta_24h <= -8:
+            s += 6
+            factors.append("cooling trend")
+        elif temp_delta_24h <= -4:
+            s += 3
+        elif temp_delta_24h >= 15:
+            s -= 8
+            factors.append("major warm-up")
+        elif temp_delta_24h >= 8:
+            s -= 5
+            factors.append("warming trend")
+        elif temp_delta_24h >= 4:
+            s -= 2
 
     # ── Wind ─────────────────────────────────────────────────────────
     if wind_mph is not None:
@@ -128,7 +150,7 @@ def compute_hourly_score(
             s += 10
             factors.append("steady wind")
         elif wind_mph < 3:
-            s += 0  # thermals dominate; neutral
+            s += 0
         elif wind_mph < 15:
             s -= 2
         elif wind_mph < 22:
@@ -138,28 +160,60 @@ def compute_hourly_score(
             s -= 20
             factors.append("gale")
 
-    # ── Pressure trend (the deer-hunting signal) ─────────────────────
-    if pressure_delta_6h is not None and pressure_delta_6h <= -2.5:
-        s += 10
-        factors.append("front edge")
-    if pressure_delta_24h is not None:
-        if pressure_delta_24h >= 5 and pressure is not None and pressure >= 1015:
+    # ── Pressure: cycle detection, then magnitude tiers ─────────────
+    # The strongest deer-movement signal is the post-front recovery
+    # window: pressure dropped 5+ hPa in the 12-24h prior to "now", then
+    # rose 2+ hPa in the last 12h. Literature consistently flags the
+    # 24-48h *after* a front passes as the canonical hunt.
+    cycle_handled = False
+    if pressure_drop_pre is not None and pressure_rise_post is not None:
+        if pressure_drop_pre <= -8 and pressure_rise_post >= 4:
+            s += 18
+            factors.append("post-front prime")
+            cycle_handled = True
+        elif pressure_drop_pre <= -5 and pressure_rise_post >= 2:
             s += 14
-            factors.append("rising into high")
-        elif pressure_delta_24h >= 2:
-            s += 6
-            factors.append("rising barometer")
-        elif pressure_delta_24h <= -5:
-            if pressure_delta_6h is None or pressure_delta_6h > -2.5:
+            factors.append("post-front window")
+            cycle_handled = True
+
+    if not cycle_handled:
+        # Falling tiers — magnitude based on the 4-5 tenths inHg threshold
+        # the literature pegs as max-activity (≈13-17 hPa / 24h).
+        if pressure_delta_24h is not None and pressure_delta_24h <= -13:
+            s += 12
+            factors.append("major front")
+        elif pressure_delta_6h is not None and pressure_delta_6h <= -8:
+            s += 14
+            factors.append("strong front edge")
+        elif pressure_delta_6h is not None and pressure_delta_6h <= -5:
+            s += 10
+            factors.append("front edge")
+        elif pressure_delta_6h is not None and pressure_delta_6h <= -2:
+            s += 5
+            factors.append("falling fast")
+
+        # Rising tiers — post-front recovery without the full cycle pattern
+        if pressure_delta_24h is not None:
+            if pressure_delta_24h >= 8:
+                s += 12
+                factors.append("strong recovery")
+            elif pressure_delta_24h >= 5 and pressure is not None and pressure >= 1015:
+                s += 10
+                factors.append("rising into high")
+            elif pressure_delta_24h >= 2:
+                s += 5
+                factors.append("rising barometer")
+            elif pressure_delta_24h <= -5:
+                # Falling but not in a recognizable front pattern
                 s -= 4
                 factors.append("falling pressure")
-        elif -1 <= pressure_delta_24h <= 1 and pressure is not None:
-            if pressure >= 1020:
-                s += 6
-                factors.append("stable high")
-            elif pressure < 1008:
-                s -= 6
-                factors.append("stable low")
+            elif -1 <= pressure_delta_24h <= 1 and pressure is not None:
+                if pressure >= 1020:
+                    s += 5
+                    factors.append("stable high")
+                elif pressure < 1008:
+                    s -= 6
+                    factors.append("stable low")
 
     # ── Cloud cover ──────────────────────────────────────────────────
     if cloud_pct is not None:
@@ -178,8 +232,6 @@ def compute_hourly_score(
             factors.append("rain")
 
     # ── Moon ─────────────────────────────────────────────────────────
-    # Bright nights = more nocturnal feeding, less daylight movement.
-    # Effect is amplified outside the rut.
     if moon_illum > 0.85:
         penalty = int(7 * (1.2 - rut_intensity))
         s -= penalty
@@ -308,19 +360,44 @@ def score_day(weather: dict, day_index: int, lat: float) -> dict:
         precip   = h_precip[idx] if idx < len(h_precip) else None
         is_day   = bool(h_isday[idx]) if idx < len(h_isday) else (6 <= hour <= 19)
 
-        # pressure trend across the global array
-        d24 = None
-        if press is not None and idx >= 24 and idx - 24 < len(h_press) and h_press[idx - 24] is not None:
-            d24 = press - h_press[idx - 24]
-        d6 = None
-        if press is not None and idx >= 6 and idx - 6 < len(h_press) and h_press[idx - 6] is not None:
-            d6 = press - h_press[idx - 6]
+        # ── Pressure deltas (for cycle detection + tiered magnitude scoring)
+        def _delta(now_idx: int, back_h: int) -> float | None:
+            if press is None or now_idx < back_h:
+                return None
+            past = h_press[now_idx - back_h] if now_idx - back_h < len(h_press) else None
+            return None if past is None else press - past
+
+        d24 = _delta(idx, 24)
+        d12 = _delta(idx, 12)
+        d6  = _delta(idx, 6)
+
+        # Front-cycle legs: drop_pre = the slide from -24h to -12h, rise_post = the recovery from -12h to now
+        drop_pre = None
+        if idx >= 24 and idx - 12 < len(h_press):
+            p24 = h_press[idx - 24] if idx - 24 < len(h_press) else None
+            p12 = h_press[idx - 12] if idx - 12 < len(h_press) else None
+            if p24 is not None and p12 is not None:
+                drop_pre = p12 - p24
+        rise_post = None
+        if press is not None and idx >= 12:
+            p12 = h_press[idx - 12] if idx - 12 < len(h_press) else None
+            if p12 is not None:
+                rise_post = press - p12
+
+        # ── Temperature delta over the last 24 hours
+        tD24 = None
+        if temp_f is not None and idx >= 24 and idx - 24 < len(h_temp):
+            past_t = h_temp[idx - 24]
+            if past_t is not None:
+                tD24 = temp_f - past_t
 
         near_dawn = bool(sunrise_dt and ts_dt and abs((ts_dt - sunrise_dt).total_seconds()) <= 5400)
         near_dusk = bool(sunset_dt  and ts_dt and abs((ts_dt - sunset_dt).total_seconds())  <= 5400)
 
         score, factors = compute_hourly_score(
-            hour, temp_f, wind_mph, cloud, press, d24, d6, precip,
+            hour, temp_f, tD24, wind_mph, cloud, press,
+            d24, d12, d6, drop_pre, rise_post,
+            precip,
             moon["illumination"], is_day, near_dawn, near_dusk,
             phase["intensity"],
         )
@@ -329,6 +406,7 @@ def score_day(weather: dict, day_index: int, lat: float) -> dict:
             "score":        score,
             "factors":      factors,
             "tempF":        round(temp_f, 1) if temp_f is not None else None,
+            "tempD24":      round(tD24, 1) if tD24 is not None else None,
             "windMph":      round(wind_mph, 1) if wind_mph is not None else None,
             "windDirDeg":   round(wind_dir, 0) if wind_dir is not None else None,
             "windCompass":  wind_compass(wind_dir),
@@ -336,6 +414,7 @@ def score_day(weather: dict, day_index: int, lat: float) -> dict:
             "cloudPct":     round(cloud, 0) if cloud is not None else None,
             "pressureHpa":  round(press, 1) if press is not None else None,
             "pressureD24":  round(d24, 1) if d24 is not None else None,
+            "pressureD12":  round(d12, 1) if d12 is not None else None,
             "pressureD6":   round(d6, 1) if d6 is not None else None,
             "precipMm":     round(precip, 2) if precip is not None else None,
             "isDay":        is_day,

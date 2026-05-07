@@ -5,7 +5,7 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
-from services.geocoding import geocode_location
+from services.geocoding import geocode_location, reverse_geocode
 from services.weather import fetch_weather
 from services.terrain import fetch_terrain_data
 from services.hunting import build_hunting_analysis
@@ -30,6 +30,15 @@ async def geocode(q: str = Query(..., min_length=1)):
         return await geocode_location(q)
     except Exception as exc:
         log.exception("Geocode failed for q=%s", q)
+        raise HTTPException(status_code=502, detail=str(exc))
+
+
+@app.get("/api/reverse-geocode")
+async def reverse(lat: float = Query(...), lon: float = Query(...)):
+    try:
+        return await reverse_geocode(lat, lon)
+    except Exception as exc:
+        log.exception("Reverse geocode failed for lat=%s lon=%s", lat, lon)
         raise HTTPException(status_code=502, detail=str(exc))
 
 
